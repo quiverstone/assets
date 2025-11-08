@@ -1,0 +1,277 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Quiverstone Browser Role - Provides varying levels of access to AWS Accounts for browser-based role switching from a trusted account you are currently logged into.
+
+Metadata:
+  TemplateInfo:
+    Name: quiverstone-browser-switch-role
+    Deploy-To: Any or all Account(s) Home Region (e.g. us-east-1)
+    Version: 1.0.0
+    Source: github.com/quiverstone/platform-assets/roles-catalog/access/quiverstone-browser-switch-role.yaml
+    Note: Deploys a role that can be assumed via browser session for account access
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-browser-switch-role.yaml&stackName=quiverstone-browser-switch-role
+    LastUpdated: 20251002
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Role Configuration
+        Parameters:
+          - pRoleName
+          - pRoleDisplayName
+      - Label:
+          default: Trusted Account Configuration
+        Parameters:
+          - pTrustedAccountId
+      - Label:
+          default: Permissions
+        Parameters:
+          - pIsReadOnlyAccess
+          - pIsAdministratorAccess
+          - pIsPowerUserAccess
+          - pIsViewOnlyAccess
+          - pIsSecurityAudit
+          - pIsSystemAdministrator
+          - pIsSupportUser
+          - pIsBillingAccess
+    ParameterLabels:
+      pRoleName:
+        default: Role Name
+      pRoleDisplayName:
+        default: Role Display Name
+      pTrustedAccountId:
+        default: Trusted Account ID
+      pIsReadOnlyAccess:
+        default: Read Only Access
+      pIsAdministratorAccess:
+        default: Administrator Access
+      pIsPowerUserAccess:
+        default: Power User Access
+      pIsViewOnlyAccess:
+        default: View Only Access
+      pIsSecurityAudit:
+        default: Security Audit
+      pIsSystemAdministrator:
+        default: System Administrator
+      pIsSupportUser:
+        default: Support User
+      pIsBillingAccess:
+        default: Billing Access
+
+Parameters:
+  pRoleName:
+    Type: String
+    Default: QuiverstoneBrowserSession
+    Description: Name for the browser-accessible organization inventory role
+
+  pRoleDisplayName:
+    Type: String
+    Default: Quiverstone Org Browser Session
+    Description: Display name for the role when switching roles in the AWS console
+
+  pTrustedAccountId:
+    Type: String
+    Description: AWS Account ID that can assume this role via browser session (this is the customer account ID)
+    AllowedPattern: "[0-9]{12}"
+
+  pIsReadOnlyAccess:
+    Type: String
+    Description: Grants permissions to view resources and basic metadata across all AWS services.
+    Default: yes
+    AllowedValues:
+      - no
+      - yes
+
+  pIsAdministratorAccess:
+    Type: String
+    Description: Provides full access to AWS services and resources.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsPowerUserAccess:
+    Type: String
+    Description: Provides full access to AWS services and resources, but does not allow management of users and groups.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsViewOnlyAccess:
+    Type: String
+    Description: Grants permissions to view resources and basic metadata across all AWS services.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSecurityAudit:
+    Type: String
+    Description: Grants permissions to view configuration data for many AWS services and to review their logs.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSystemAdministrator:
+    Type: String
+    Description: Grants full access permissions necessary for resources required for application operations.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSupportUser:
+    Type: String
+    Description: Grants permissions to troubleshoot and resolve issues in an AWS account. This policy also enables the user to contact AWS support to create and manage cases.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsBillingAccess:
+    Type: String
+    Description: Grants permissions for billing and cost management. This includes viewing account usage and viewing and downloading AWS bills.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+Conditions:
+  cIsReadOnlyAccess: !Equals [yes, !Ref pIsReadOnlyAccess]
+  cIsAdministratorAccess: !Equals [yes, !Ref pIsAdministratorAccess]
+  cIsPowerUserAccess: !Equals [yes, !Ref pIsPowerUserAccess]
+  cIsViewOnlyAccess: !Equals [yes, !Ref pIsViewOnlyAccess]
+  cIsSecurityAudit: !Equals [yes, !Ref pIsSecurityAudit]
+  cIsSystemAdministrator: !Equals [yes, !Ref pIsSystemAdministrator]
+  cIsSupportUser: !Equals [yes, !Ref pIsSupportUser]
+  cIsBillingAccess: !Equals [yes, !Ref pIsBillingAccess]
+
+Resources:
+  rQuiverstoneBrowserOrgInventoryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref pRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${pTrustedAccountId}:root"
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !If [
+            cIsAdministratorAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsReadOnlyAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/ReadOnlyAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsPowerUserAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/PowerUserAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsViewOnlyAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/ViewOnlyAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsSecurityAudit,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/SecurityAudit",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsSystemAdministrator,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/SystemAdministrator",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsSupportUser,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/SupportUser",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsBillingAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/Billing",
+            !Ref AWS::NoValue,
+          ]
+      Policies:
+        - PolicyName: QuiverstoneBrowserOrgInventoryPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              # Organizations read permissions
+              - Effect: Allow
+                Action:
+                  - organizations:DescribeOrganization
+                  - organizations:DescribeOrganizationalUnit
+                  - organizations:DescribeAccount
+                  - organizations:DescribePolicy
+                  - organizations:DescribeResourcePolicy
+                  - organizations:DescribeHandshake
+                  - organizations:DescribeCreateAccountStatus
+                  - organizations:DescribeEffectivePolicy
+                  - organizations:ListRoots
+                  - organizations:ListOrganizationalUnitsForParent
+                  - organizations:ListAccountsForParent
+                  - organizations:ListAccounts
+                  - organizations:ListChildren
+                  - organizations:ListParents
+                  - organizations:ListPolicies
+                  - organizations:ListPoliciesForTarget
+                  - organizations:ListTargetsForPolicy
+                  - organizations:ListHandshakesForOrganization
+                  - organizations:ListHandshakesForAccount
+                  - organizations:ListCreateAccountStatus
+                  - organizations:ListAWSServiceAccessForOrganization
+                  - organizations:ListDelegatedAdministrators
+                  - organizations:ListDelegatedServicesForAccount
+                  - organizations:ListTagsForResource
+                Resource: "*"
+              # Account information
+              - Effect: Allow
+                Action:
+                  - account:GetAccountInformation
+                  - account:GetAlternateContact
+                  - account:GetContactInformation
+                  - account:ListRegions
+                Resource: "*"
+              # Basic support access for organization health
+              - Effect: Allow
+                Action:
+                  - support:DescribeServices
+                  - support:DescribeSeverityLevels
+                  - support:DescribeCommunications
+                  - support:DescribeCases
+                Resource: "*"
+
+Outputs:
+  oRoleArn:
+    Description: ARN of the Quiverstone Browser Organization Inventory Role
+    Value: !GetAtt rQuiverstoneBrowserOrgInventoryRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-BrowserOrgInventoryRoleArn"
+
+  oRoleName:
+    Description: Name of the Quiverstone Browser Organization Inventory Role
+    Value: !Ref rQuiverstoneBrowserOrgInventoryRole
+    Export:
+      Name: !Sub "${AWS::StackName}-BrowserOrgInventoryRoleName"
+
+  oTrustedAccountId:
+    Description: Account ID that can assume this role via browser
+    Value: !Ref pTrustedAccountId
+    Export:
+      Name: !Sub "${AWS::StackName}-TrustedAccountId"
+
+  oSwitchRoleUrl:
+    Description: URL for browser role switching
+    Value: !Sub
+      - "https://signin.aws.amazon.com/switchrole?account=${AWS::AccountId}&roleName=${pRoleName}&displayName=${EncodedDisplayName}"
+      - EncodedDisplayName: !Join ["%20", !Split [" ", !Ref pRoleDisplayName]]
+    Export:
+      Name: !Sub "${AWS::StackName}-SwitchRoleUrl"

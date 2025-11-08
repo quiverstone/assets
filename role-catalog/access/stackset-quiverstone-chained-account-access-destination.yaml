@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Quiverstone Chained Account Access Destination StackSet - Deploys chained read-only access roles across all organization accounts
+
+Metadata:
+  TemplateInfo:
+    Name: stackset-quiverstone-chained-account-access-destination
+    Deploy-To: Management Account Home Region (e.g. us-east-1)
+    Version: 1.0.0
+    Source: github.com/quiverstone/platform-assets/roles-catalog/access/stackset-quiverstone-chained-account-access-destination.yaml
+    Note: Creates a StackSet that deploys chained destination account access roles to all organization accounts
+    LastUpdated: 20251108
+  cfn_nag:
+    rules_to_suppress:
+      - id: W28
+        reason: Explicit name is required for stack set functionality.
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: StackSet Configuration
+        Parameters:
+          - pDeploymentOUs
+          - pDeploymentRegion
+          - pNonceValue
+      - Label:
+          default: Account Access Role Configuration
+        Parameters:
+          - pAccountAccessRoleName
+          - pExternalId
+      - Label:
+          default: Intermediate Account Configuration
+        Parameters:
+          - pIntermediateAccountId
+          - pTrustPrincipals
+          - pIntermediateRoleName
+          - pIntermediateRoleExternalId
+    ParameterLabels:
+      pDeploymentOUs:
+        default: Deployment Organizational Units
+      pDeploymentRegion:
+        default: Deployment Region
+      pNonceValue:
+        default: Nonce Value
+      pAccountAccessRoleName:
+        default: Account Access Role Name
+      pExternalId:
+        default: External ID (Optional)
+      pIntermediateAccountId:
+        default: Intermediate Account ID
+      pTrustPrincipals:
+        default: Trust All Principals in Intermediate Account
+      pIntermediateRoleName:
+        default: Intermediate Role Name (Required if Trust Principals = 'Named')
+      pIntermediateRoleExternalId:
+        default: Intermediate Role External ID (Reference Only)
+
+Parameters:
+  pDeploymentOUs:
+    Type: CommaDelimitedList
+    Description: Organization Unit IDs to deploy to (comma-separated). Use root OU ID to deploy to all accounts.
+    MinLength: 6
+
+  pDeploymentRegion:
+    Type: String
+    Description: AWS Region to deploy the roles
+    Default: us-east-1
+    AllowedValues:
+      - us-east-1
+      - us-east-2
+      - us-west-1
+      - us-west-2
+      - eu-west-1
+      - eu-central-1
+      - ap-southeast-1
+      - ap-southeast-2
+      - ap-northeast-1
+
+  pNonceValue:
+    Type: String
+    Description: Random identifier to force update of StackSet resource (change this value to update the StackSet)
+    Default: "1"
+
+  pAccountAccessRoleName:
+    Type: String
+    Default: QuiverstoneChainedAccountAccess
+    Description: Name for the destination account access role
+    MinLength: 1
+
+  pExternalId:
+    Type: String
+    Default: ""
+    Description: External ID for role assumption (recommended for security)
+    MaxLength: 1224
+
+  pIntermediateAccountId:
+    Type: String
+    Description: AWS Account ID that serves as the intermediate hop for role chaining
+    AllowedPattern: "[0-9]{12}"
+    MinLength: 1
+
+  pTrustPrincipals:
+    Type: String
+    Description: Trust all principals in the intermediate account (All) or only a named role (Named)
+    Default: Named
+    AllowedValues:
+      - All
+      - Named
+
+  pIntermediateRoleName:
+    Type: String
+    Default: QuiverstoneChainHopRole
+    Description: Name of the role in the intermediate account that can assume this role
+
+  pIntermediateRoleExternalId:
+    Type: String
+    Default: ""
+    Description: External ID for Intermediate role assumption (reference only for Quiverstone Configuration)
+    MaxLength: 1224
+
+Conditions:
+  cIsPrimaryRegion: !Equals [!Ref AWS::Region, us-east-1]
+
+Resources:
+  rChainedAccountAccessStackSet:
+    Condition: cIsPrimaryRegion
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: quiverstone-chained-account-access-destination
+      Description: Quiverstone Chained Account Access Destination - Provides read-only access to all organization accounts via role chaining
+      PermissionModel: SERVICE_MANAGED
+      AutoDeployment:
+        Enabled: true
+        RetainStacksOnAccountRemoval: false
+      Capabilities:
+        - CAPABILITY_IAM
+        - CAPABILITY_NAMED_IAM
+      OperationPreferences:
+        MaxConcurrentPercentage: 100
+        FailureTolerancePercentage: 100
+        RegionConcurrencyType: PARALLEL
+      StackInstancesGroup:
+        - Regions:
+            - !Ref pDeploymentRegion
+          DeploymentTargets:
+            OrganizationalUnitIds: !Ref pDeploymentOUs
+      Parameters:
+        - ParameterKey: pAccountAccessRoleName
+          ParameterValue: !Ref pAccountAccessRoleName
+        - ParameterKey: pExternalId
+          ParameterValue: !Ref pExternalId
+        - ParameterKey: pIntermediateAccountId
+          ParameterValue: !Ref pIntermediateAccountId
+        - ParameterKey: pTrustPrincipals
+          ParameterValue: !Ref pTrustPrincipals
+        - ParameterKey: pIntermediateRoleName
+          ParameterValue: !Ref pIntermediateRoleName
+        - ParameterKey: pIntermediateRoleExternalId
+          ParameterValue: !Ref pIntermediateRoleExternalId
+      TemplateURL: https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-chained-account-access-destination.yaml
+      Tags:
+        - Key: Name
+          Value: quiverstone-chained-account-access-destination
+        - Key: Purpose
+          Value: read-only-chained-account-access
+        - Key: ManagedBy
+          Value: cloudformation
+
+Outputs:
+  oStackSetId:
+    Condition: cIsPrimaryRegion
+    Description: StackSet ID for the chained account access deployment
+    Value: !GetAtt rChainedAccountAccessStackSet.StackSetId
+    Export:
+      Name: !Sub "${AWS::StackName}-StackSetId"
+
+  oStackSetName:
+    Description: Name of the StackSet
+    Value: quiverstone-chained-account-access-destination
+
+  oDeploymentOUs:
+    Description: Organizational Units where roles are deployed
+    Value: !Join [", ", !Ref pDeploymentOUs]
+
+  oDeploymentRegion:
+    Description: Region where roles are deployed
+    Value: !Ref pDeploymentRegion
+
+  oNonceValue:
+    Description: Current nonce value for tracking updates
+    Value: !Ref pNonceValue

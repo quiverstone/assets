@@ -1,0 +1,48 @@
+---
+name: Upload Templates
+
+on:
+  push:
+    branches:
+      - main
+
+permissions: read-all
+
+env:
+  SESSION_NAME: ${{ github.event.repository.name }}
+  DURATION: 900
+  REGION: us-east-2
+  ROLE: ${{ secrets.DELIVERY_ROLE_ARN }}
+  BUCKET: assets.quiverston.io
+
+jobs:
+  Upload:
+    name: Upload Templates
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-session-name: ${{ env.SESSION_NAME }}
+          role-duration-seconds: ${{ env.DURATION }}
+          aws-region: ${{ env.REGION }}
+          role-to-assume: ${{ env.ROLE }}
+
+      - name: Sync Access Templates to S3
+        run: |
+          echo "Syncing Access Templates"
+          aws s3 sync access s3://${{ env.BUCKET }}/${{ github.event.repository.name }}/access --delete
+
+      - name: Sync Inventory Templates to S3
+        run: |
+          echo "Syncing Inventory Templates"
+          aws s3 sync inventory  env.BUCKET }}/${{ github.event.repository.name }}/inventory --delete
+          aws s3 sync access s3://${{ env.BUCKET }}/${{ github.event.repository.name }}/inventory --delete
