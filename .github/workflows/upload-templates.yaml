@@ -36,13 +36,11 @@ jobs:
           aws-region: ${{ env.REGION }}
           role-to-assume: ${{ env.ROLE }}
 
-      - name: Sync Access Templates to S3
+      - name: Sync Role Templates to S3
         run: |
           echo "Syncing Access Templates"
-          aws s3 sync access s3://${{ env.BUCKET }}/${{ github.event.repository.name }}/access --delete
-
-      - name: Sync Inventory Templates to S3
-        run: |
+          aws s3 sync access s3://${{ env.BUCKET }}/role-catalog/access --delete
           echo "Syncing Inventory Templates"
-          aws s3 sync inventory  env.BUCKET }}/${{ github.event.repository.name }}/inventory --delete
-          aws s3 sync access s3://${{ env.BUCKET }}/${{ github.event.repository.name }}/inventory --delete
+          aws s3 sync inventory 3://${{ env.BUCKET }}/role-catalog/inventory --delete
+           echo "Syncing Service Catalog Templates"
+          aws s3 sync inventory 3://${{ env.BUCKET }}/role-catalog/service-catalog --delete
