@@ -6,7 +6,7 @@ Metadata:
     Name: stackset-quiverstone-direct-account-access
     Deploy-To: Management Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/roles-catalog/access/stackset-quiverstone-direct-account-access.yaml
+    Source: github.com/quiverstone/assets/role-catalog/access/stackset-quiverstone-direct-account-access.yaml
     Note: Creates a StackSet that deploys direct account access roles to all organization accounts
     LastUpdated: 20251112
   cfn_nag:

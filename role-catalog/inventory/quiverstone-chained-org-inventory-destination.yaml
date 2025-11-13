@@ -6,7 +6,7 @@ Metadata:
     Name: quiverstone-chained-org-inventory-destination
     Deploy-To: Management Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/roles-catalog/inventory/quiverstone-chained-org-inventory-destination.yaml
+    Source: github.com/quiverstone/assets/role-catalog/inventory/quiverstone-chained-org-inventory-destination.yaml
     Note: Deploys destination role in Management Account that can be assumed via role chaining from intermediate account
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/inventory/quiverstone-chained-org-inventory-destination.yaml&stackName=quiverstone-chained-org-inventory-destination
     LastUpdated: 20251112
