@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Statement",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::{DelegatedOrganizationAccountId}:root"
+      },
+      "Action": ["organizations:List*", "organizations:Describe*"],
+      "Resource": "*"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Quiverstone Direct Account Access Role - Provides read-only access to AWS account resources
+
+Metadata:
+  TemplateInfo:
+    Name: quiverstone-direct-account-access
+    Deploy-To: Individual Account Home Region (e.g. us-east-1)
+    Version: 1.0.0
+    Source: github.com/quiverstone/assets/roles-catalog/access/quiverstone-direct-account-access.yaml
+    Note: Deploys a role that can be directly assumed by Quiverstone production account for read-only account access
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-direct-account-access.yaml&stackName=quiverstone-direct-account-access
+    LastUpdated: 20251112
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Role Configuration
+        Parameters:
+          - pRoleName
+          - pExternalId
+      - Label:
+          default: Trusted Account Configuration
+        Parameters:
+          - pQuiverstoneProductionAccountId
+    ParameterLabels:
+      pRoleName:
+        default: Target Role Name
+      pExternalId:
+        default: External ID (Optional)
+      pQuiverstoneProductionAccountId:
+        default: Quiverstone Production Account (684035162433)
+
+Parameters:
+  pRoleName:
+    Type: String
+    Default: QuiverstoneDirectAccountAccess
+    Description: Name for the direct account access role
+    MinLength: 1
+    ConstraintDescription: Target Role Name must not be null
+
+  pQuiverstoneProductionAccountId:
+    Type: String
+    Default: 684035162433
+    Description: Quiverstone production account ID that can assume this role (DO NOT MODIFY)
+    AllowedPattern: "[0-9]{12}"
+    MinLength: 1
+    ConstraintDescription: Quiverstone production account ID must not be null
+
+  pExternalId:
+    Type: String
+    Default: ""
+    Description: External ID for additional security (recommended)
+    MaxLength: 1224
+
+Conditions:
+  cHasExternalId: !Not [!Equals [!Ref pExternalId, ""]]
+
+Resources:
+  rQuiverstoneDirectAccountAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref pRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
+            Action: sts:AssumeRole
+            Condition: !If
+              - cHasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref pExternalId
+              - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/ReadOnlyAccess"
+      Policies:
+        - PolicyName: QuiverstoneAccountAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              # Account information
+              - Effect: Allow
+                Action:
+                  - account:GetAccountInformation
+                  - account:GetAlternateContact
+                  - account:GetContactInformation
+                  - account:ListRegions
+                Resource: "*"
+              # Basic support access
+              - Effect: Allow
+                Action:
+                  - support:DescribeServices
+                  - support:DescribeSeverityLevels
+                  - support:DescribeCommunications
+                  - support:DescribeCases
+                Resource: "*"
+
+Outputs:
+  oRoleArn:
+    Description: ARN of the Quiverstone Direct Account Access Role
+    Value: !GetAtt rQuiverstoneDirectAccountAccessRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-RoleArn"
+
+  oRoleExternalId:
+    Condition: cHasExternalId
+    Description: External ID for role assumption
+    Value: !Ref pExternalId
+    Export:
+      Name: !Sub "${AWS::StackName}-ExternalId"
+
+  oRoleName:
+    Description: Name of the Quiverstone Direct Account Access Role
+    Value: !Ref rQuiverstoneDirectAccountAccessRole
+    Export:
+      Name: !Sub "${AWS::StackName}-RoleName"

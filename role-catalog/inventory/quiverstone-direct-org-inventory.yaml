@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Quiverstone Direct Organization Inventory Role - Provides read-only access to AWS Organizations data for inventory purposes
+
+Metadata:
+  TemplateInfo:
+    Name: quiverstone-direct-org-inventory
+    Deploy-To: Management Account Home Region (e.g. us-east-1)
+    Version: 1.0.0
+    Source: github.com/quiverstone/assets/roles-catalog/inventory/quiverstone-direct-org-inventory.yaml
+    Note: Deploys a role that can be directly assumed by Quiverstone production account for organization inventory access
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/inventory/quiverstone-direct-org-inventory.yaml&stackName=quiverstone-direct-org-inventory
+    LastUpdated: 20251112
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Role Configuration
+        Parameters:
+          - pRoleName
+          - pExternalId
+      - Label:
+          default: Trusted Account Configuration
+        Parameters:
+          - pQuiverstoneProductionAccountId
+    ParameterLabels:
+      pRoleName:
+        default: Target Role Name
+      pExternalId:
+        default: External ID (Optional)
+      pQuiverstoneProductionAccountId:
+        default: Quiverstone Production Account (684035162433)
+
+Parameters:
+  pRoleName:
+    Type: String
+    Default: QuiverstoneDirectOrgInventory
+    Description: Name for the direct organization inventory role
+    MinLength: 1
+    ConstraintDescription: Target Role Name must not be null
+
+  pQuiverstoneProductionAccountId:
+    Type: String
+    Default: 684035162433
+    Description: Quiverstone production account ID that can assume this role (DO NOT MODIFY)
+    AllowedPattern: "[0-9]{12}"
+    MinLength: 1
+    ConstraintDescription: Quiverstone production account ID must not be null
+
+  pExternalId:
+    Type: String
+    Default: ""
+    Description: External ID for additional security (recommended)
+    MaxLength: 1224
+
+Conditions:
+  cHasExternalId: !Not [!Equals [!Ref pExternalId, ""]]
+
+Resources:
+  rQuiverstoneDirectOrgInventoryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref pRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
+            Action: sts:AssumeRole
+            Condition: !If
+              - cHasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref pExternalId
+              - !Ref AWS::NoValue
+      Policies:
+        - PolicyName: QuiverstoneOrgInventoryPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              # Organizations read permissions
+              - Effect: Allow
+                Action:
+                  - organizations:DescribeOrganization
+                  - organizations:DescribeOrganizationalUnit
+                  - organizations:DescribeAccount
+                  - organizations:DescribePolicy
+                  - organizations:DescribeResourcePolicy
+                  - organizations:DescribeHandshake
+                  - organizations:DescribeCreateAccountStatus
+                  - organizations:DescribeEffectivePolicy
+                  - organizations:ListRoots
+                  - organizations:ListOrganizationalUnitsForParent
+                  - organizations:ListAccountsForParent
+                  - organizations:ListAccounts
+                  - organizations:ListChildren
+                  - organizations:ListParents
+                  - organizations:ListPolicies
+                  - organizations:ListPoliciesForTarget
+                  - organizations:ListTargetsForPolicy
+                  - organizations:ListHandshakesForOrganization
+                  - organizations:ListHandshakesForAccount
+                  - organizations:ListCreateAccountStatus
+                  - organizations:ListAWSServiceAccessForOrganization
+                  - organizations:ListDelegatedAdministrators
+                  - organizations:ListDelegatedServicesForAccount
+                  - organizations:ListTagsForResource
+                Resource: "*"
+              # Account information
+              - Effect: Allow
+                Action:
+                  - account:GetAccountInformation
+                  - account:GetAlternateContact
+                  - account:GetContactInformation
+                  - account:ListRegions
+                Resource: "*"
+
+Outputs:
+  TargetRoleArn:
+    Description: Use for 'Target Role ARN' in Quiverstone Organization configuration
+    Value: !GetAtt rQuiverstoneDirectOrgInventoryRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-TargetRoleArn"
+
+  TargetRoleExternalId:
+    Condition: cHasExternalId
+    Description: Use for 'Target External ID (recommended)' in Quiverstone Organization configuration
+    Value: !Ref pExternalId
+    Export:
+      Name: !Sub "${AWS::StackName}-TargetRoleExternalId"

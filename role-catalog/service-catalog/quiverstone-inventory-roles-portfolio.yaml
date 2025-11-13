@@ -1,0 +1,237 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Quiverstone Inventory Roles Service Catalog Portfolio - Managed Service Provider portfolio for deploying organization inventory roles to customer accounts
+
+Metadata:
+  TemplateInfo:
+    Name: quiverstone-inventory-roles-portfolio
+    Deploy-To: MSP Account Home Region (e.g. us-east-1)
+    Version: 1.0.0
+    Source: github.com/quiverstone/assets/roles-catalog/service-catalog/quiverstone-inventory-roles-portfolio.yaml
+    Note: Creates AWS Service Catalog portfolio with inventory role products for sharing with customer organizations
+    LastUpdated: 20251112
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Portfolio Configuration
+        Parameters:
+          - pPortfolioName
+          - pPortfolioDescription
+      - Label:
+          default: Template Source Configuration
+        Parameters:
+          - pTemplateS3BucketName
+          - pTemplateS3KeyPrefix
+    ParameterLabels:
+      pPortfolioName:
+        default: Portfolio Name
+      pPortfolioDescription:
+        default: Portfolio Description
+      pTemplateS3BucketName:
+        default: S3 Bucket Name
+      pTemplateS3KeyPrefix:
+        default: S3 Key Prefix
+
+Parameters:
+  pPortfolioName:
+    Type: String
+    Default: Quiverstone Inventory Roles
+    Description: Name for the Service Catalog portfolio
+
+  pPortfolioDescription:
+    Type: String
+    Default: Organization inventory roles for Quiverstone monitoring and compliance
+    Description: Description for the Service Catalog portfolio
+
+  pTemplateS3BucketName:
+    Type: String
+    Default: assets.quiverston.io
+    Description: S3 bucket containing the CloudFormation templates
+
+  pTemplateS3KeyPrefix:
+    Type: String
+    Default: quiverstone-roles-catalog/inventory/
+    Description: S3 key prefix for templates (must end with /)
+
+Resources:
+  # Service Catalog Portfolio
+  rInventoryRolesPortfolio:
+    Type: AWS::ServiceCatalog::Portfolio
+    Properties:
+      DisplayName: !Ref pPortfolioName
+      Description: !Ref pPortfolioDescription
+      ProviderName: Quiverstone
+      Tags:
+        - Key: Name
+          Value: !Ref pPortfolioName
+        - Key: Purpose
+          Value: inventory-roles
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # Product: Direct Organization Inventory
+  rDirectOrgInventoryProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Direct Organization Inventory Role
+      Description: Direct assumption from Quiverstone production account for organization inventory access. Deploys read-only role in management account.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/organizations/inventory
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - Direct organization inventory role with read-only permissions
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-direct-org-inventory.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: direct-org-inventory
+        - Key: Version
+          Value: 1.0.0
+
+  rDirectOrgInventoryAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rInventoryRolesPortfolio
+      ProductId: !Ref rDirectOrgInventoryProduct
+
+  # Product: Chained Organization Inventory - Destination
+  rChainedOrgInventoryDestinationProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Chained Organization Inventory - Destination Role
+      Description: Destination role for chained access in management account. Trusts intermediate account for enhanced security through role chaining.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/organizations/inventory
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - Chained destination role with flexible trust options and read-only permissions
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-org-inventory-destination.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: chained-org-inventory-destination
+        - Key: Version
+          Value: 1.0.0
+
+  rChainedOrgInventoryDestinationAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rInventoryRolesPortfolio
+      ProductId: !Ref rChainedOrgInventoryDestinationProduct
+
+  # Product: Chained Organization Inventory - Intermediate
+  rChainedOrgInventoryIntermediateProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Chained Organization Inventory - Intermediate Role
+      Description: Intermediate role for chained access in trusted account. Enables role chaining from Quiverstone production account to destination role.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/organizations/inventory
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - Intermediate role with configurable assume role scope for destination accounts
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-org-inventory-intermediate.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: chained-org-inventory-intermediate
+        - Key: Version
+          Value: 1.0.0
+
+  rChainedOrgInventoryIntermediateAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rInventoryRolesPortfolio
+      ProductId: !Ref rChainedOrgInventoryIntermediateProduct
+
+  # Launch Constraint Role
+  rServiceCatalogLaunchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ServiceCatalogInventoryRolesLaunchRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: servicecatalog.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+      Tags:
+        - Key: Name
+          Value: ServiceCatalogInventoryRolesLaunchRole
+        - Key: Purpose
+          Value: service-catalog-launch
+
+  # Launch Constraints
+  rDirectOrgInventoryLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rInventoryRolesPortfolio
+      ProductId: !Ref rDirectOrgInventoryProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rChainedOrgInventoryDestinationLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rInventoryRolesPortfolio
+      ProductId: !Ref rChainedOrgInventoryDestinationProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rChainedOrgInventoryIntermediateLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rInventoryRolesPortfolio
+      ProductId: !Ref rChainedOrgInventoryIntermediateProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+Outputs:
+  oPortfolioId:
+    Description: Service Catalog Portfolio ID for inventory roles
+    Value: !Ref rInventoryRolesPortfolio
+    Export:
+      Name: !Sub ${AWS::StackName}-PortfolioId
+
+  oPortfolioName:
+    Description: Name of the Service Catalog Portfolio
+    Value: !Ref pPortfolioName
+
+  oDirectOrgInventoryProductId:
+    Description: Product ID for Direct Organization Inventory Role
+    Value: !Ref rDirectOrgInventoryProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-DirectOrgInventoryProductId
+
+  oChainedOrgInventoryDestinationProductId:
+    Description: Product ID for Chained Organization Inventory Destination Role
+    Value: !Ref rChainedOrgInventoryDestinationProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-ChainedOrgInventoryDestinationProductId
+
+  oChainedOrgInventoryIntermediateProductId:
+    Description: Product ID for Chained Organization Inventory Intermediate Role
+    Value: !Ref rChainedOrgInventoryIntermediateProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-ChainedOrgInventoryIntermediateProductId
+
+  oLaunchRoleArn:
+    Description: ARN of the Service Catalog launch role
+    Value: !GetAtt rServiceCatalogLaunchRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-LaunchRoleArn
+
+  oPortfolioSharingInstructions:
+    Description: Instructions for sharing this portfolio
+    Value: Use AWS Organizations to share this portfolio with customer OUs or accounts, or use portfolio sharing to specific accounts

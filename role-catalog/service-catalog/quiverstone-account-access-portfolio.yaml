@@ -1,0 +1,405 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Quiverstone Account Access Roles Service Catalog Portfolio - Organization-wide portfolio for deploying read-only account access roles across all accounts
+
+Metadata:
+  TemplateInfo:
+    Name: quiverstone-account-access-portfolio
+    Deploy-To: Management Account Home Region (e.g. us-east-1)
+    Version: 1.0.0
+    Source: github.com/quiverstone/assets/roles-catalog/service-catalog/quiverstone-account-access-portfolio.yaml
+    Note: Creates AWS Service Catalog portfolio with account access role products for organization-wide deployment
+    LastUpdated: 20251112
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Portfolio Configuration
+        Parameters:
+          - pPortfolioName
+          - pPortfolioDescription
+      - Label:
+          default: Template Source Configuration
+        Parameters:
+          - pTemplateS3BucketName
+          - pTemplateS3KeyPrefix
+    ParameterLabels:
+      pPortfolioName:
+        default: Portfolio Name
+      pPortfolioDescription:
+        default: Portfolio Description
+      pTemplateS3BucketName:
+        default: S3 Bucket Name
+      pTemplateS3KeyPrefix:
+        default: S3 Key Prefix
+
+Parameters:
+  pPortfolioName:
+    Type: String
+    Default: Quiverstone Account Access Roles
+    Description: Name for the Service Catalog portfolio
+
+  pPortfolioDescription:
+    Type: String
+    Default: Read-only account access roles for Quiverstone monitoring across all organization accounts
+    Description: Description for the Service Catalog portfolio
+
+  pTemplateS3BucketName:
+    Type: String
+    Default: assets.quiverston.io
+    Description: S3 bucket containing the CloudFormation templates
+
+  pTemplateS3KeyPrefix:
+    Type: String
+    Default: quiverstone-roles-catalog/access/
+    Description: S3 key prefix for templates (must end with /)
+
+Resources:
+  # Service Catalog Portfolio
+  rAccountAccessPortfolio:
+    Type: AWS::ServiceCatalog::Portfolio
+    Properties:
+      DisplayName: !Ref pPortfolioName
+      Description: !Ref pPortfolioDescription
+      ProviderName: Quiverstone
+      Tags:
+        - Key: Name
+          Value: !Ref pPortfolioName
+        - Key: Purpose
+          Value: account-access-roles
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # Product: Direct Account Access (Individual)
+  rDirectAccountAccessProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Direct Account Access Role
+      Description: Direct assumption from Quiverstone production account for read-only account access. Deploys individual role with ReadOnlyAccess policy.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - Direct account access role with read-only permissions for individual deployment
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-direct-account-access.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: direct-account-access
+        - Key: Version
+          Value: 1.0.0
+
+  rDirectAccountAccessAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rDirectAccountAccessProduct
+
+  # Product: Direct Account Access (StackSet)
+  rDirectAccountAccessStackSetProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Direct Account Access - StackSet Deployment
+      Description: StackSet to deploy direct account access roles across all organization accounts. Enables automatic deployment to new accounts.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - StackSet for organization-wide direct account access role deployment
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}stackset-quiverstone-direct-account-access.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: direct-account-access-stackset
+        - Key: Version
+          Value: 1.0.0
+
+  rDirectAccountAccessStackSetAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rDirectAccountAccessStackSetProduct
+
+  # Product: Chained Account Access - Destination (Individual)
+  rChainedAccountAccessDestinationProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Chained Account Access - Destination Role
+      Description: Destination role for chained access in individual account. Trusts intermediate account for enhanced security through role chaining.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - Chained destination role with flexible trust options and read-only permissions
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-account-access-destination.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: chained-account-access-destination
+        - Key: Version
+          Value: 1.0.0
+
+  rChainedAccountAccessDestinationAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rChainedAccountAccessDestinationProduct
+
+  # Product: Chained Account Access - Destination (StackSet)
+  rChainedAccountAccessDestinationStackSetProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Chained Account Access - Destination StackSet
+      Description: StackSet to deploy chained destination roles across all organization accounts. Enables automatic deployment to new accounts with role chaining.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - StackSet for organization-wide chained destination role deployment
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}stackset-quiverstone-chained-account-access-destination.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: chained-account-access-destination-stackset
+        - Key: Version
+          Value: 1.0.0
+
+  rChainedAccountAccessDestinationStackSetAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rChainedAccountAccessDestinationStackSetProduct
+
+  # Product: Chained Account Access - Intermediate
+  rChainedAccountAccessIntermediateProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Chained Account Access - Intermediate Role
+      Description: Intermediate role for chained access in trusted account. Enables role chaining from Quiverstone production account to destination roles in child accounts.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - Intermediate role with configurable assume role scope for destination accounts
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-account-access-intermediate.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: chained-account-access-intermediate
+        - Key: Version
+          Value: 1.0.0
+
+  rChainedAccountAccessIntermediateAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rChainedAccountAccessIntermediateProduct
+
+  # Product: Browser Switch Role (Individual)
+  rBrowserSwitchRoleProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Browser Switch Role
+      Description: Browser-based role switching for interactive AWS Console access. Provides configurable permissions with browser-friendly role assumption.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - Browser-accessible role with customizable AWS managed policy permissions
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-browser-switch-role.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: browser-switch-role
+        - Key: Version
+          Value: 1.0.0
+
+  rBrowserSwitchRoleAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rBrowserSwitchRoleProduct
+
+  # Product: Browser Switch Role (StackSet)
+  rBrowserSwitchRoleStackSetProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Name: Quiverstone Browser Switch Role - StackSet Deployment
+      Description: StackSet to deploy browser-accessible roles across all organization accounts. Enables automatic deployment to new accounts with browser-based access.
+      Owner: Quiverstone
+      Distributor: Quiverstone
+      SupportEmail: support+iac@quiverston.io
+      SupportUrl: https://docs.quiverston.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Description: Initial release - StackSet for organization-wide browser switch role deployment
+          Info:
+            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}stackset-quiverstone-browser-switch-role.yaml
+          Type: CLOUD_FORMATION_TEMPLATE
+      Tags:
+        - Key: Product
+          Value: browser-switch-role-stackset
+        - Key: Version
+          Value: 1.0.0
+
+  rBrowserSwitchRoleStackSetAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rBrowserSwitchRoleStackSetProduct
+
+  # Launch Constraint Role
+  rServiceCatalogLaunchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ServiceCatalogAccountAccessRolesLaunchRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: servicecatalog.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+      Tags:
+        - Key: Name
+          Value: ServiceCatalogAccountAccessRolesLaunchRole
+        - Key: Purpose
+          Value: service-catalog-launch
+
+  # Launch Constraints
+  rDirectAccountAccessLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rDirectAccountAccessProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rDirectAccountAccessStackSetLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rDirectAccountAccessStackSetProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rChainedAccountAccessDestinationLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rChainedAccountAccessDestinationProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rChainedAccountAccessDestinationStackSetLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rChainedAccountAccessDestinationStackSetProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rChainedAccountAccessIntermediateLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rChainedAccountAccessIntermediateProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rBrowserSwitchRoleLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rBrowserSwitchRoleProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+  rBrowserSwitchRoleStackSetLaunchConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref rAccountAccessPortfolio
+      ProductId: !Ref rBrowserSwitchRoleStackSetProduct
+      RoleArn: !GetAtt rServiceCatalogLaunchRole.Arn
+
+Outputs:
+  oPortfolioId:
+    Description: Service Catalog Portfolio ID for account access roles
+    Value: !Ref rAccountAccessPortfolio
+    Export:
+      Name: !Sub ${AWS::StackName}-PortfolioId
+
+  oPortfolioName:
+    Description: Name of the Service Catalog Portfolio
+    Value: !Ref pPortfolioName
+
+  oDirectAccountAccessProductId:
+    Description: Product ID for Direct Account Access Role
+    Value: !Ref rDirectAccountAccessProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-DirectAccountAccessProductId
+
+  oDirectAccountAccessStackSetProductId:
+    Description: Product ID for Direct Account Access StackSet
+    Value: !Ref rDirectAccountAccessStackSetProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-DirectAccountAccessStackSetProductId
+
+  oChainedAccountAccessDestinationProductId:
+    Description: Product ID for Chained Account Access Destination Role
+    Value: !Ref rChainedAccountAccessDestinationProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-ChainedAccountAccessDestinationProductId
+
+  oChainedAccountAccessDestinationStackSetProductId:
+    Description: Product ID for Chained Account Access Destination StackSet
+    Value: !Ref rChainedAccountAccessDestinationStackSetProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-ChainedAccountAccessDestinationStackSetProductId
+
+  oChainedAccountAccessIntermediateProductId:
+    Description: Product ID for Chained Account Access Intermediate Role
+    Value: !Ref rChainedAccountAccessIntermediateProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-ChainedAccountAccessIntermediateProductId
+
+  oBrowserSwitchRoleProductId:
+    Description: Product ID for Browser Switch Role
+    Value: !Ref rBrowserSwitchRoleProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-BrowserSwitchRoleProductId
+
+  oBrowserSwitchRoleStackSetProductId:
+    Description: Product ID for Browser Switch Role StackSet
+    Value: !Ref rBrowserSwitchRoleStackSetProduct
+    Export:
+      Name: !Sub ${AWS::StackName}-BrowserSwitchRoleStackSetProductId
+
+  oLaunchRoleArn:
+    Description: ARN of the Service Catalog launch role
+    Value: !GetAtt rServiceCatalogLaunchRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-LaunchRoleArn
+
+  oPortfolioSharingInstructions:
+    Description: Instructions for sharing this portfolio
+    Value: Use AWS Organizations to share this portfolio with OUs or accounts for organization-wide access to these products
