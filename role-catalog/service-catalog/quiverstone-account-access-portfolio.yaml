@@ -6,7 +6,7 @@ Metadata:
     Name: quiverstone-account-access-portfolio
     Deploy-To: Management Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/roles-catalog/service-catalog/quiverstone-account-access-portfolio.yaml
+    Source: github.com/quiverstone/assets/role-catalog/service-catalog/quiverstone-account-access-portfolio.yaml
     Note: Creates AWS Service Catalog portfolio with account access role products for organization-wide deployment
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:

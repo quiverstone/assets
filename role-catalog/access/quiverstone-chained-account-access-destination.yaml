@@ -6,9 +6,9 @@ Metadata:
     Name: quiverstone-chained-account-access-destination
     Deploy-To: Individual Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/roles-catalog/access/quiverstone-chained-account-access-destination.yaml
+    Source: github.com/quiverstone/assets/role-catalog/access/quiverstone-chained-account-access-destination.yaml
     Note: Deploys destination role in target account that can be assumed via role chaining from intermediate account
-    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-chained-account-access-destination.yaml&stackName=quiverstone-chained-account-access-destination
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-chained-account-access-destination.yaml&stackName=quiverstone-chained-account-access-destination
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:

@@ -6,7 +6,7 @@ Metadata:
     Name: stackset-quiverstone-browser-switch-role
     Deploy-To: Management or Delegated CloudFormation StackSet Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/roles-catalog/access/stackset-quiverstone-browser-switch-role.yaml
+    Source: github.com/quiverstone/assets/role-catalog/access/stackset-quiverstone-browser-switch-role.yaml
     Note: Creates a StackSet that deploys browser-accessible roles to all organization accounts
     LastUpdated: 20251112
   cfn_nag:
@@ -75,7 +75,6 @@ Parameters:
   pDeploymentOUs:
     Type: CommaDelimitedList
     Description: Organization Unit IDs to deploy to (comma-separated). Use root OU ID to deploy to all accounts.
-    MinLength: 6
 
   pDeploymentRegion:
     Type: String
@@ -225,7 +224,7 @@ Resources:
           ParameterValue: !Ref pIsSupportUser
         - ParameterKey: pIsBillingAccess
           ParameterValue: !Ref pIsBillingAccess
-      TemplateURL: https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-browser-switch-role.yaml
+      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-browser-switch-role.yaml
       Tags:
         - Key: Name
           Value: quiverstone-browser-switch-roles
