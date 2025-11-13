@@ -6,9 +6,9 @@ Metadata:
     Name: quiverstone-inventory-roles-portfolio
     Deploy-To: MSP Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/platform-assets/roles-catalog/service-catalog/quiverstone-inventory-roles-portfolio.yaml
+    Source: github.com/quiverstone/assets/roles-catalog/service-catalog/quiverstone-inventory-roles-portfolio.yaml
     Note: Creates AWS Service Catalog portfolio with inventory role products for sharing with customer organizations
-    LastUpdated: 20251108
+    LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:

@@ -6,9 +6,9 @@ Metadata:
     Name: stackset-quiverstone-chained-account-access-destination
     Deploy-To: Management Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/platform-assets/roles-catalog/access/stackset-quiverstone-chained-account-access-destination.yaml
+    Source: github.com/quiverstone/assets/roles-catalog/access/stackset-quiverstone-chained-account-access-destination.yaml
     Note: Creates a StackSet that deploys chained destination account access roles to all organization accounts
-    LastUpdated: 20251108
+    LastUpdated: 20251112
   cfn_nag:
     rules_to_suppress:
       - id: W28

@@ -6,10 +6,10 @@ Metadata:
     Name: quiverstone-direct-org-inventory
     Deploy-To: Management Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/platform-assets/roles-catalog/inventory/quiverstone-direct-org-inventory.yaml
+    Source: github.com/quiverstone/assets/roles-catalog/inventory/quiverstone-direct-org-inventory.yaml
     Note: Deploys a role that can be directly assumed by Quiverstone production account for organization inventory access
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/inventory/quiverstone-direct-org-inventory.yaml&stackName=quiverstone-direct-org-inventory
-    LastUpdated: 20251002
+    LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
