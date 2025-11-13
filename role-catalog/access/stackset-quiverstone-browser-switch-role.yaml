@@ -224,7 +224,7 @@ Resources:
           ParameterValue: !Ref pIsSupportUser
         - ParameterKey: pIsBillingAccess
           ParameterValue: !Ref pIsBillingAccess
-      TemplateURL: https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-browser-switch-role.yaml
+      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-browser-switch-role.yaml
       Tags:
         - Key: Name
           Value: quiverstone-browser-switch-roles

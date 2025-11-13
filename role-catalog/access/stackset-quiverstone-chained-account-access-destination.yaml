@@ -154,7 +154,7 @@ Resources:
           ParameterValue: !Ref pIntermediateRoleName
         - ParameterKey: pIntermediateRoleExternalId
           ParameterValue: !Ref pIntermediateRoleExternalId
-      TemplateURL: https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-chained-account-access-destination.yaml
+      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-chained-account-access-destination.yaml
       Tags:
         - Key: Name
           Value: quiverstone-chained-account-access-destination

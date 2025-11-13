@@ -121,7 +121,7 @@ Resources:
           ParameterValue: !Ref pQuiverstoneProductionAccountId
         - ParameterKey: pExternalId
           ParameterValue: !Ref pExternalId
-      TemplateURL: https://assets.quiverston.io.s3.us-east-2.amazonaws.com/quiverstone-roles-catalog/access/quiverstone-direct-account-access.yaml
+      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-direct-account-access.yaml
       Tags:
         - Key: Name
           Value: quiverstone-direct-account-access
