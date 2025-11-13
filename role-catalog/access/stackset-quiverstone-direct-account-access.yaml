@@ -48,7 +48,6 @@ Parameters:
   pDeploymentOUs:
     Type: CommaDelimitedList
     Description: Organization Unit IDs to deploy to (comma-separated). Use root OU ID to deploy to all accounts.
-    MinLength: 6
 
   pDeploymentRegion:
     Type: String
