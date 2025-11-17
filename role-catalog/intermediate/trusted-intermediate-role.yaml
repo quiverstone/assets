@@ -1,14 +1,14 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Chained Organization Inventory Intermediate Role - Deploys in the Intermediate Account to enable role chaining
+Description: Quiverstone Trusted Intermediate Role - Deploys in the Intermediate Account to enable role chaining
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-chained-org-inventory-intermediate
+    Name: quiverstone-trusted-intermediate-role
     Deploy-To: Intermediate/Trusted Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/inventory/quiverstone-chained-org-inventory-intermediate.yaml
-    Note: Deploys intermediate role in trusted account that can chain to destination role in Management Account
-    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/quiverstone-chained-org-inventory-intermediate.yaml&stackName=quiverstone-chained-org-inventory-intermediate
+    Source: github.com/quiverstone/assets/role-catalog/inventory/trusted-intermediate-role.yaml
+    Note: Deploys intermediate role in trusted account that can chain to destination Access Roles in other Accounta
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/intermediate/trusted-intermediate-role.yaml&stackName=quiverstone-trusted-intermediate-role
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -44,7 +44,7 @@ Metadata:
 Parameters:
   pIntermediateRoleName:
     Type: String
-    Default: QuiverstoneChainHopRole
+    Default: QuiverstoneTrustedIntermediate
     Description: Name for the intermediate role that will chain to the destination
     MinLength: 1
     ConstraintDescription: Intermediate Role Name must not be null
@@ -96,7 +96,7 @@ Conditions:
   cAnyRole: !Equals [!Ref pAssumeRoleScope, any-role-any-account]
 
 Resources:
-  rQuiverstoneChainHopRole:
+  rQuiverstoneIntermediateRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref pIntermediateRoleName
@@ -113,7 +113,7 @@ Resources:
                   sts:ExternalId: !Ref pExternalId
               - !Ref AWS::NoValue
       Policies:
-        - PolicyName: QuiverstoneChainHopPolicy
+        - PolicyName: QuiverstoneIntermediateRoleAssume
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -148,7 +148,7 @@ Resources:
 Outputs:
   IntermediateRoleArn:
     Description: Use for 'Intermediate Role ARN (required)' in Quiverstone Organization configuration
-    Value: !GetAtt rQuiverstoneChainHopRole.Arn
+    Value: !GetAtt rQuiverstoneIntermediateRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-IntermediateRoleArn"
 

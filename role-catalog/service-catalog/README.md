@@ -1,5 +1,7 @@
 # Service Catalog Portfolios
 
+>Note: Not in production or referenced
+
 This directory contains AWS Service Catalog portfolio templates for deploying Quiverstone roles through a centralized, self-service catalog.
 
 For additional information on AWS Service Catalog and deploying these portfolios, please visit:

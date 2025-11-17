@@ -1,9 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Direct Organization Inventory Role - Provides read-only access to AWS Organizations data for inventory purposes
+Description: Quiverstone Standalone Account Inventory Role - Provides read-only access to an individual AWS account for inventory purposes
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-direct-org-inventory
+    Name: quiverstone-standalone-account-inventory
     Deploy-To: Management Account Home Region (e.g. us-east-1)
     Version: 1.0.0
     Source: github.com/quiverstone/assets/role-catalog/inventory/quiverstone-direct-org-inventory.yaml
