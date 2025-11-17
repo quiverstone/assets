@@ -8,7 +8,7 @@ Metadata:
     Deploy-To: Any or all Account(s) Home Region (e.g. us-east-1)
     Version: 1.0.0
     Source: github.com/quiverstone/assets/role-catalog/access/browser-access-role.yaml
-    Note: Deploys a role that can be assumed via browser session for account access - Does not require the use of a trusted account and cannot use External ID for role assumption.
+    Note: Deploys a role that can be assumed via browser session for account access - Does not require the use of a trusted intermediate account and CANNOT use External ID for role assumption.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/browser-access-role.yaml&stackName=quiverstone-browser-access-role
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:

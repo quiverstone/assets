@@ -1,14 +1,15 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Browser Role - Provides varying levels of access to AWS Accounts for browser-based role switching from a trusted account you are currently logged into.
+Description: >
+  Quiverstone Direct to Account Access Role - Provides varying levels of access to AWS Accounts for federated role switching from the Quiverstone application
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-browser-switch-role
+    Name: quiverstone-direct-access-role
     Deploy-To: Any or all Account(s) Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/access/quiverstone-browser-switch-role.yaml
-    Note: Deploys a role that can be assumed via browser session for account access
-    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-browser-switch-role.yaml&stackName=quiverstone-browser-switch-role
+    Source: github.com/quiverstone/assets/role-catalog/access/direct-access-role.yaml
+    Note: Deploys a role that can be assumed via browser session for account access - Does not require the use of a trusted intermediate account and External ID is recommeneded for role assumption.
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role.yaml&stackName=quiverstone-direct-access-role
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -16,11 +17,11 @@ Metadata:
           default: Role Configuration
         Parameters:
           - pRoleName
-          - pRoleDisplayName
+          - pExternalId
       - Label:
           default: Trusted Account Configuration
         Parameters:
-          - pTrustedAccountId
+          - pQuiverstoneProductionAccountId
       - Label:
           default: Permissions
         Parameters:
@@ -35,10 +36,10 @@ Metadata:
     ParameterLabels:
       pRoleName:
         default: Role Name
-      pRoleDisplayName:
-        default: Role Display Name
-      pTrustedAccountId:
-        default: Trusted Account ID
+      pExternalId:
+        default: External ID (Optional)
+      pQuiverstoneProductionAccountId:
+        default: Quiverstone Production Account (684035162433)
       pIsReadOnlyAccess:
         default: Read Only Access
       pIsAdministratorAccess:
@@ -59,18 +60,22 @@ Metadata:
 Parameters:
   pRoleName:
     Type: String
-    Default: QuiverstoneBrowserSession
-    Description: Name for the browser-accessible organization inventory role
+    Default: QuiverstoneDirectAccess
+    Description: Name for the federated access role
 
-  pRoleDisplayName:
+  pQuiverstoneProductionAccountId:
     Type: String
-    Default: Quiverstone Org Browser Session
-    Description: Display name for the role when switching roles in the AWS console
-
-  pTrustedAccountId:
-    Type: String
-    Description: AWS Account ID that can assume this role via browser session (this is the customer account ID)
+    Default: 684035162433
+    Description: Quiverstone production account ID that can assume this role (DO NOT MODIFY)
     AllowedPattern: "[0-9]{12}"
+    MinLength: 1
+    ConstraintDescription: Quiverstone production account ID must not be null
+
+  pExternalId:
+    Type: String
+    Default: ""
+    Description: External ID for additional security (recommended)
+    MaxLength: 1224
 
   pIsReadOnlyAccess:
     Type: String
@@ -137,6 +142,7 @@ Parameters:
       - yes
 
 Conditions:
+  cHasExternalId: !Not [!Equals [!Ref pExternalId, ""]]
   cIsReadOnlyAccess: !Equals [yes, !Ref pIsReadOnlyAccess]
   cIsAdministratorAccess: !Equals [yes, !Ref pIsAdministratorAccess]
   cIsPowerUserAccess: !Equals [yes, !Ref pIsPowerUserAccess]
@@ -147,7 +153,7 @@ Conditions:
   cIsBillingAccess: !Equals [yes, !Ref pIsBillingAccess]
 
 Resources:
-  rQuiverstoneBrowserOrgInventoryRole:
+  rQuiverstoneDirectAccountAccessRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref pRoleName
@@ -156,8 +162,13 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${pTrustedAccountId}:root"
+              AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
             Action: sts:AssumeRole
+            Condition: !If
+              - cHasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref pExternalId
+              - !Ref AWS::NoValue
       ManagedPolicyArns:
         - !If [
             cIsAdministratorAccess,
@@ -199,79 +210,23 @@ Resources:
             !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/Billing",
             !Ref AWS::NoValue,
           ]
-      Policies:
-        - PolicyName: QuiverstoneBrowserOrgInventoryPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              # Organizations read permissions
-              - Effect: Allow
-                Action:
-                  - organizations:DescribeOrganization
-                  - organizations:DescribeOrganizationalUnit
-                  - organizations:DescribeAccount
-                  - organizations:DescribePolicy
-                  - organizations:DescribeResourcePolicy
-                  - organizations:DescribeHandshake
-                  - organizations:DescribeCreateAccountStatus
-                  - organizations:DescribeEffectivePolicy
-                  - organizations:ListRoots
-                  - organizations:ListOrganizationalUnitsForParent
-                  - organizations:ListAccountsForParent
-                  - organizations:ListAccounts
-                  - organizations:ListChildren
-                  - organizations:ListParents
-                  - organizations:ListPolicies
-                  - organizations:ListPoliciesForTarget
-                  - organizations:ListTargetsForPolicy
-                  - organizations:ListHandshakesForOrganization
-                  - organizations:ListHandshakesForAccount
-                  - organizations:ListCreateAccountStatus
-                  - organizations:ListAWSServiceAccessForOrganization
-                  - organizations:ListDelegatedAdministrators
-                  - organizations:ListDelegatedServicesForAccount
-                  - organizations:ListTagsForResource
-                Resource: "*"
-              # Account information
-              - Effect: Allow
-                Action:
-                  - account:GetAccountInformation
-                  - account:GetAlternateContact
-                  - account:GetContactInformation
-                  - account:ListRegions
-                Resource: "*"
-              # Basic support access for organization health
-              - Effect: Allow
-                Action:
-                  - support:DescribeServices
-                  - support:DescribeSeverityLevels
-                  - support:DescribeCommunications
-                  - support:DescribeCases
-                Resource: "*"
 
 Outputs:
   oRoleArn:
-    Description: ARN of the Quiverstone Browser Organization Inventory Role
-    Value: !GetAtt rQuiverstoneBrowserOrgInventoryRole.Arn
+    Description: ARN of the Quiverstone Direct Account Access Role
+    Value: !GetAtt rQuiverstoneDirectAccountAccessRole.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-BrowserOrgInventoryRoleArn"
+      Name: !Sub "${AWS::StackName}-RoleArn"
+
+  oRoleExternalId:
+    Condition: cHasExternalId
+    Description: External ID for role assumption
+    Value: !Ref pExternalId
+    Export:
+      Name: !Sub "${AWS::StackName}-ExternalId"
 
   oRoleName:
-    Description: Name of the Quiverstone Browser Organization Inventory Role
-    Value: !Ref rQuiverstoneBrowserOrgInventoryRole
+    Description: Name of the Quiverstone Direct Account Access Role
+    Value: !Ref rQuiverstoneDirectAccountAccessRole
     Export:
-      Name: !Sub "${AWS::StackName}-BrowserOrgInventoryRoleName"
-
-  oTrustedAccountId:
-    Description: Account ID that can assume this role via browser
-    Value: !Ref pTrustedAccountId
-    Export:
-      Name: !Sub "${AWS::StackName}-TrustedAccountId"
-
-  oSwitchRoleUrl:
-    Description: URL for browser role switching
-    Value: !Sub
-      - "https://signin.aws.amazon.com/switchrole?account=${AWS::AccountId}&roleName=${pRoleName}&displayName=${EncodedDisplayName}"
-      - EncodedDisplayName: !Join ["%20", !Split [" ", !Ref pRoleDisplayName]]
-    Export:
-      Name: !Sub "${AWS::StackName}-SwitchRoleUrl"
+      Name: !Sub "${AWS::StackName}-RoleName"

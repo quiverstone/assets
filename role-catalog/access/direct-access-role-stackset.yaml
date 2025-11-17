@@ -1,13 +1,15 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Quiverstone Browser Role StackSet - Deploys browser-accessible roles across all organization accounts
+Description: >
+  Quiverstone Direct to Account Access Role StackSet - Deploys federated role across all Organization Accounts for federated role switching from the Quiverstone application
 
 Metadata:
   TemplateInfo:
-    Name: stackset-quiverstone-browser-switch-role
+    Name: stackset-quiverstone-direct-access-role
     Deploy-To: Management or Delegated CloudFormation StackSet Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/access/stackset-quiverstone-browser-switch-role.yaml
-    Note: Creates a StackSet that deploys browser-accessible roles to all organization accounts
+    Source: github.com/quiverstone/assets/role-catalog/access/direct-access-role-stackset.yaml
+    Note: Creates a StackSet that deploys federated roles to all organization accounts
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role-stackset.yaml&stackName=stackset-quiverstone-direct-access-role
     LastUpdated: 20251112
   cfn_nag:
     rules_to_suppress:
@@ -20,16 +22,15 @@ Metadata:
         Parameters:
           - pDeploymentOUs
           - pDeploymentRegion
-          - pNonceValue
       - Label:
           default: Role Configuration
         Parameters:
           - pRoleName
-          - pRoleDisplayName
+          - pExternalId
       - Label:
           default: Trusted Account Configuration
         Parameters:
-          - pTrustedAccountId
+          - pQuiverstoneProductionAccountId
       - Label:
           default: Permissions
         Parameters:
@@ -46,14 +47,12 @@ Metadata:
         default: Deployment Organizational Units
       pDeploymentRegion:
         default: Deployment Region
-      pNonceValue:
-        default: Nonce Value
       pRoleName:
         default: Role Name
-      pRoleDisplayName:
-        default: Role Display Name
-      pTrustedAccountId:
-        default: Trusted Account ID
+      pExternalId:
+        default: External ID (Optional)
+      pQuiverstoneProductionAccountId:
+        default: Quiverstone Production Account (684035162433)
       pIsReadOnlyAccess:
         default: Read Only Access
       pIsAdministratorAccess:
@@ -91,25 +90,23 @@ Parameters:
       - ap-southeast-2
       - ap-northeast-1
 
-  pNonceValue:
-    Type: String
-    Description: Random identifier to force update of StackSet resource (change this value to update the StackSet)
-    Default: "1"
-
   pRoleName:
     Type: String
-    Default: QuiverstoneBrowserSession
-    Description: Name for the browser-accessible organization inventory role
+    Default: QuiverstoneDirectAccess
+    Description: Name for the federated access role
 
-  pRoleDisplayName:
+  pQuiverstoneProductionAccountId:
     Type: String
-    Default: Quiverstone Org Browser Session
-    Description: Display name for the role when switching roles in the AWS console
-
-  pTrustedAccountId:
-    Type: String
-    Description: AWS Account ID that can assume this role via browser session (this is the customer account ID)
+    Default: 684035162433
+    Description: Quiverstone production account ID that can assume this role (DO NOT MODIFY)
     AllowedPattern: "[0-9]{12}"
+    MinLength: 1
+
+  pExternalId:
+    Type: String
+    Default: ""
+    Description: External ID for additional security (recommended)
+    MaxLength: 1224
 
   pIsReadOnlyAccess:
     Type: String
@@ -175,16 +172,12 @@ Parameters:
       - no
       - yes
 
-Conditions:
-  cIsPrimaryRegion: !Equals [!Ref AWS::Region, us-east-1]
-
 Resources:
-  rBrowserRolesStackSet:
-    Condition: cIsPrimaryRegion
+  rDirectAccessRolesStackSet:
     Type: AWS::CloudFormation::StackSet
     Properties:
-      StackSetName: quiverstone-browser-switch-roles
-      Description: Quiverstone Browser Role - Provides browser-based role switching across all organization accounts
+      StackSetName: quiverstone-direct-access-role
+      Description: Quiverstone Direct to Account Access Role StackSet - Deploys federated role across all Organization Accounts for federated role switching from the Quiverstone application
       PermissionModel: SERVICE_MANAGED
       AutoDeployment:
         Enabled: true
@@ -204,10 +197,10 @@ Resources:
       Parameters:
         - ParameterKey: pRoleName
           ParameterValue: !Ref pRoleName
-        - ParameterKey: pRoleDisplayName
-          ParameterValue: !Ref pRoleDisplayName
-        - ParameterKey: pTrustedAccountId
-          ParameterValue: !Ref pTrustedAccountId
+        - ParameterKey: pQuiverstoneProductionAccountId
+          ParameterValue: !Ref pQuiverstoneProductionAccountId
+        - ParameterKey: pExternalId
+          ParameterValue: !Ref pExternalId
         - ParameterKey: pIsReadOnlyAccess
           ParameterValue: !Ref pIsReadOnlyAccess
         - ParameterKey: pIsAdministratorAccess
@@ -224,23 +217,16 @@ Resources:
           ParameterValue: !Ref pIsSupportUser
         - ParameterKey: pIsBillingAccess
           ParameterValue: !Ref pIsBillingAccess
-      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-browser-switch-role.yaml
+      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role.yaml
       Tags:
         - Key: Name
-          Value: quiverstone-browser-switch-roles
+          Value: quiverstone-direct-access-role
         - Key: Purpose
-          Value: browser-role-switching
+          Value: federated-role-switching
         - Key: ManagedBy
           Value: cloudformation
 
 Outputs:
-  oStackSetId:
-    Condition: cIsPrimaryRegion
-    Description: StackSet ID for the browser role deployment
-    Value: !GetAtt rBrowserRolesStackSet.StackSetId
-    Export:
-      Name: !Sub "${AWS::StackName}-StackSetId"
-
   oStackSetName:
     Description: Name of the StackSet
     Value: quiverstone-browser-switch-roles
@@ -252,7 +238,3 @@ Outputs:
   oDeploymentRegion:
     Description: Region where roles are deployed
     Value: !Ref pDeploymentRegion
-
-  oNonceValue:
-    Description: Current nonce value for tracking updates
-    Value: !Ref pNonceValue

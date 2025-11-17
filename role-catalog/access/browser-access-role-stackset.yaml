@@ -162,7 +162,6 @@ Parameters:
       - yes
 
 Resources:
-
   rBrowserRolesStackSet:
     Type: AWS::CloudFormation::StackSet
     Properties:
@@ -215,12 +214,6 @@ Resources:
           Value: cloudformation
 
 Outputs:
-  oStackSetId:
-    Description: StackSet ID for the browser role deployment
-    Value: !GetAtt rBrowserRolesStackSet.StackSetId
-    Export:
-      Name: !Sub "${AWS::StackName}-StackSetId"
-
   oStackSetName:
     Description: Name of the StackSet
     Value: quiverstone-browser-switch-roles
