@@ -250,20 +250,16 @@ Resources:
           ParameterValue: !Ref pIsSupportUser
         - ParameterKey: pIsBillingAccess
           ParameterValue: !Ref pIsBillingAccess
-      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-chained-account-access-destination.yaml
+      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/chained-access-role.yaml
       Tags:
         - Key: Name
-          Value: quiverstone-chained-account-access-destination
+          Value: quiverstone-chained-access-role
         - Key: Purpose
-          Value: read-only-chained-account-access
+          Value: chained-account-access
         - Key: ManagedBy
           Value: cloudformation
 
 Outputs:
-  oStackSetName:
-    Description: Name of the StackSet
-    Value: quiverstone-chained-account-access-destination
-
   oDeploymentOUs:
     Description: Organizational Units where roles are deployed
     Value: !Join [", ", !Ref pDeploymentOUs]

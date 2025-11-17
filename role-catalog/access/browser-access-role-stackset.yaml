@@ -214,10 +214,6 @@ Resources:
           Value: cloudformation
 
 Outputs:
-  oStackSetName:
-    Description: Name of the StackSet
-    Value: quiverstone-browser-switch-roles
-
   oDeploymentOUs:
     Description: Organizational Units where roles are deployed
     Value: !Join [", ", !Ref pDeploymentOUs]
