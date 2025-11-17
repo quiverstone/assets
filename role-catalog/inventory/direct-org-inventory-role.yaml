@@ -1,14 +1,14 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Standalone Account Inventory Role - Provides read-only access to an individual AWS account for inventory purposes
+Description: Quiverstone Organization Inventory Role - Deploys inventory role in Organization account that can be assumed directly from Quiverstone
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-standalone-account-inventory
-    Deploy-To: Management Account Home Region (e.g. us-east-1)
+    Name: quiverstone-dircet-org-inventory-role
+    Deploy-To: Management/Delegated Account Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/inventory/quiverstone-direct-org-inventory.yaml
-    Note: Deploys a role that can be directly assumed by Quiverstone production account for organization inventory access
-    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/quiverstone-direct-org-inventory.yaml&stackName=quiverstone-direct-org-inventory
+    Source: github.com/quiverstone/assets/role-catalog/inventory/direct-org-inventory-role.yaml
+    Note: Deploys inventory role in Organization that can be assumed directly from Quiverstone
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/direct-org-inventory-role.yaml&stackName=quiverstone-direct-org-inventory-role
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -72,7 +72,7 @@ Resources:
                   sts:ExternalId: !Ref pExternalId
               - !Ref AWS::NoValue
       Policies:
-        - PolicyName: QuiverstoneOrgInventoryPolicy
+        - PolicyName: QuiverstoneInventoryPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:

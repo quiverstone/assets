@@ -1,14 +1,14 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Chained Organization Inventory Destination Role - Deploys in the Management Account to allow access through role chaining
+Description: Quiverstone Chained Organization Inventory Role - Deploys inventory role in Organization account that can be assumed via role chaining from intermediate account
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-chained-org-inventory-destination
-    Deploy-To: Management Account Home Region (e.g. us-east-1)
+    Name: quiverstone-chained-org-inventory-role
+    Deploy-To: Management/Delegate Org Account in Home Region(e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/inventory/quiverstone-chained-org-inventory-destination.yaml
-    Note: Deploys destination role in Management Account that can be assumed via role chaining from intermediate account
-    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/quiverstone-chained-org-inventory-destination.yaml&stackName=quiverstone-chained-org-inventory-destination
+    Source: github.com/quiverstone/assets/role-catalog/inventory/chained-org-inventory-role.yaml
+    Note: Deploys inventory role in Organization that can be assumed via role chaining from intermediate account
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/chained-org-inventory-role.yaml&stackName=quiverstone-chained-org-inventory-role
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -65,14 +65,14 @@ Parameters:
       Trust all principals in the intermediate account instead of a specific role. |
       Set to 'All' to allow any role in trusted account. |
       Set to 'Named' to trust only the named role provided below (the role must exist first).
-    Default: Named
+    Default: All
     AllowedValues:
       - All
       - Named
 
   pIntermediateRoleName:
     Type: String
-    Default: QuiverstoneChainHopRole
+    Default: QuiverstoneTrustedIntermediate
     Description: >
       Name of the role in the intermediate account that can assume this role (populate for reference even if trusting entire account).
 
@@ -123,7 +123,7 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              # Organizations read permissions
+              # Organizations read permissions - minimum access
               - Effect: Allow
                 Action:
                   - organizations:DescribeOrganization
