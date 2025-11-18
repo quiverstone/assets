@@ -1,14 +1,15 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Browser Role - Provides varying levels of access to AWS Accounts for browser-based role switching from a trusted account you are currently logged into.
+Description: >
+  Quiverstone Browser Role - Provides varying levels of access to AWS Accounts for browser-based role switching from a trusted account you are currently logged into.
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-browser-switch-role
+    Name: quiverstone-browser-access-role
     Deploy-To: Any or all Account(s) Home Region (e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/access/quiverstone-browser-switch-role.yaml
-    Note: Deploys a role that can be assumed via browser session for account access
-    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-browser-switch-role.yaml&stackName=quiverstone-browser-switch-role
+    Source: github.com/quiverstone/assets/role-catalog/access/browser-access-role.yaml
+    Note: Deploys a role that can be assumed via browser session for account access - Does not require the use of a trusted intermediate account and CANNOT use External ID for role assumption.
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/browser-access-role.yaml&stackName=quiverstone-browser-access-role
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -16,7 +17,6 @@ Metadata:
           default: Role Configuration
         Parameters:
           - pRoleName
-          - pRoleDisplayName
       - Label:
           default: Trusted Account Configuration
         Parameters:
@@ -35,8 +35,6 @@ Metadata:
     ParameterLabels:
       pRoleName:
         default: Role Name
-      pRoleDisplayName:
-        default: Role Display Name
       pTrustedAccountId:
         default: Trusted Account ID
       pIsReadOnlyAccess:
@@ -60,16 +58,12 @@ Parameters:
   pRoleName:
     Type: String
     Default: QuiverstoneBrowserSession
-    Description: Name for the browser-accessible organization inventory role
-
-  pRoleDisplayName:
-    Type: String
-    Default: Quiverstone Org Browser Session
-    Description: Display name for the role when switching roles in the AWS console
+    Description: Name for the role to assume via browser session
 
   pTrustedAccountId:
     Type: String
-    Description: AWS Account ID that can assume this role via browser session (this is the customer account ID)
+    Description: >
+      AWS Account ID you have access to that can assume this role via the same browser session as Quiverstone (IMPORTANT: DO NOT USE ANY QUIVERSTONE ACCOUNT IDs)
     AllowedPattern: "[0-9]{12}"
 
   pIsReadOnlyAccess:
@@ -147,7 +141,7 @@ Conditions:
   cIsBillingAccess: !Equals [yes, !Ref pIsBillingAccess]
 
 Resources:
-  rQuiverstoneBrowserOrgInventoryRole:
+  rQuiverstoneBrowserAccessRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref pRoleName
@@ -156,7 +150,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${pTrustedAccountId}:root"
+              AWS: !Sub "arn:aws:iam::${pTrustedAccountId}:root" ## Allow all principals in trusted account to assume this role
+              # AWS: !Sub "arn:aws:iam::${pTrustedAccountId}:root" ## Update to hardcoded specific principal is desired
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - !If [
@@ -252,26 +247,18 @@ Resources:
 Outputs:
   oRoleArn:
     Description: ARN of the Quiverstone Browser Organization Inventory Role
-    Value: !GetAtt rQuiverstoneBrowserOrgInventoryRole.Arn
+    Value: !GetAtt rQuiverstoneBrowserAccessRole.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-BrowserOrgInventoryRoleArn"
+      Name: !Sub "${AWS::StackName}-BrowserAccessRoleArn"
 
   oRoleName:
     Description: Name of the Quiverstone Browser Organization Inventory Role
-    Value: !Ref rQuiverstoneBrowserOrgInventoryRole
+    Value: !Ref rQuiverstoneBrowserAccessRole
     Export:
-      Name: !Sub "${AWS::StackName}-BrowserOrgInventoryRoleName"
+      Name: !Sub "${AWS::StackName}-BrowserAccessRoleName"
 
   oTrustedAccountId:
     Description: Account ID that can assume this role via browser
     Value: !Ref pTrustedAccountId
     Export:
       Name: !Sub "${AWS::StackName}-TrustedAccountId"
-
-  oSwitchRoleUrl:
-    Description: URL for browser role switching
-    Value: !Sub
-      - "https://signin.aws.amazon.com/switchrole?account=${AWS::AccountId}&roleName=${pRoleName}&displayName=${EncodedDisplayName}"
-      - EncodedDisplayName: !Join ["%20", !Split [" ", !Ref pRoleDisplayName]]
-    Export:
-      Name: !Sub "${AWS::StackName}-SwitchRoleUrl"

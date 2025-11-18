@@ -1,0 +1,223 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Quiverstone Browser Role StackSet - Deploys browser-accessible roles across all organization accounts
+
+Metadata:
+  TemplateInfo:
+    Name: stackset-quiverstone-browser-access-role
+    Deploy-To: Management or Delegated CloudFormation StackSet Account Home Region (e.g. us-east-1)
+    Version: 1.0.0
+    Source: github.com/quiverstone/assets/role-catalog/access/browser-switch-role-stackset.yaml
+    Note: Creates a StackSet that deploys browser-accessible roles to all organization accounts
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/browser-access-role-stackset.yaml&stackName=stackset-quiverstone-browser-access-role
+    LastUpdated: 20251112
+  cfn_nag:
+    rules_to_suppress:
+      - id: W28
+        reason: Explicit name is required for stack set functionality.
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: StackSet Configuration
+        Parameters:
+          - pDeploymentOUs
+          - pDeploymentRegion
+      - Label:
+          default: Role Configuration
+        Parameters:
+          - pRoleName
+      - Label:
+          default: Trusted Account Configuration
+        Parameters:
+          - pTrustedAccountId
+      - Label:
+          default: Permissions
+        Parameters:
+          - pIsReadOnlyAccess
+          - pIsAdministratorAccess
+          - pIsPowerUserAccess
+          - pIsViewOnlyAccess
+          - pIsSecurityAudit
+          - pIsSystemAdministrator
+          - pIsSupportUser
+          - pIsBillingAccess
+    ParameterLabels:
+      pDeploymentOUs:
+        default: Deployment Organizational Units
+      pDeploymentRegion:
+        default: Deployment Region
+      pRoleName:
+        default: Role Name
+      pTrustedAccountId:
+        default: Trusted Account ID
+      pIsReadOnlyAccess:
+        default: Read Only Access
+      pIsAdministratorAccess:
+        default: Administrator Access
+      pIsPowerUserAccess:
+        default: Power User Access
+      pIsViewOnlyAccess:
+        default: View Only Access
+      pIsSecurityAudit:
+        default: Security Audit
+      pIsSystemAdministrator:
+        default: System Administrator
+      pIsSupportUser:
+        default: Support User
+      pIsBillingAccess:
+        default: Billing Access
+
+Parameters:
+  pDeploymentOUs:
+    Type: CommaDelimitedList
+    Description: Organization Unit IDs to deploy to (comma-separated). Use root OU ID to deploy to all accounts.
+
+  pDeploymentRegion:
+    Type: String
+    Description: AWS Region to deploy the roles
+    Default: us-east-1
+    AllowedValues:
+      - us-east-1
+      - us-east-2
+      - us-west-1
+      - us-west-2
+      - eu-west-1
+      - eu-central-1
+      - ap-southeast-1
+      - ap-southeast-2
+      - ap-northeast-1
+
+  pRoleName:
+    Type: String
+    Default: QuiverstoneBrowserSession
+    Description: Name for the browser-accessible organization inventory role
+
+  pTrustedAccountId:
+    Type: String
+    Description: >
+      AWS Account ID you have access to that can assume this role via the same browser session as Quiverstone (IMPORTANT: DO NOT USE ANY QUIVERSTONE ACCOUNT IDs)
+    AllowedPattern: "[0-9]{12}"
+
+  pIsReadOnlyAccess:
+    Type: String
+    Description: Grants permissions to view resources and basic metadata across all AWS services.
+    Default: yes
+    AllowedValues:
+      - no
+      - yes
+
+  pIsAdministratorAccess:
+    Type: String
+    Description: Provides full access to AWS services and resources.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsPowerUserAccess:
+    Type: String
+    Description: Provides full access to AWS services and resources, but does not allow management of users and groups.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsViewOnlyAccess:
+    Type: String
+    Description: Grants permissions to view resources and basic metadata across all AWS services.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSecurityAudit:
+    Type: String
+    Description: Grants permissions to view configuration data for many AWS services and to review their logs.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSystemAdministrator:
+    Type: String
+    Description: Grants full access permissions necessary for resources required for application operations.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSupportUser:
+    Type: String
+    Description: Grants permissions to troubleshoot and resolve issues in an AWS account. This policy also enables the user to contact AWS support to create and manage cases.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsBillingAccess:
+    Type: String
+    Description: Grants permissions for billing and cost management. This includes viewing account usage and viewing and downloading AWS bills.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+Resources:
+  rBrowserRolesStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: quiverstone-browser-access-role
+      Description: Quiverstone Browser Role - Provides browser-based role switching across all organization accounts
+      PermissionModel: SERVICE_MANAGED
+      AutoDeployment:
+        Enabled: true
+        RetainStacksOnAccountRemoval: false
+      Capabilities:
+        - CAPABILITY_IAM
+        - CAPABILITY_NAMED_IAM
+      OperationPreferences:
+        MaxConcurrentPercentage: 100
+        FailureTolerancePercentage: 100
+        RegionConcurrencyType: PARALLEL
+      StackInstancesGroup:
+        - Regions:
+            - !Ref pDeploymentRegion
+          DeploymentTargets:
+            OrganizationalUnitIds: !Ref pDeploymentOUs
+      Parameters:
+        - ParameterKey: pRoleName
+          ParameterValue: !Ref pRoleName
+        - ParameterKey: pTrustedAccountId
+          ParameterValue: !Ref pTrustedAccountId
+        - ParameterKey: pIsReadOnlyAccess
+          ParameterValue: !Ref pIsReadOnlyAccess
+        - ParameterKey: pIsAdministratorAccess
+          ParameterValue: !Ref pIsAdministratorAccess
+        - ParameterKey: pIsPowerUserAccess
+          ParameterValue: !Ref pIsPowerUserAccess
+        - ParameterKey: pIsViewOnlyAccess
+          ParameterValue: !Ref pIsViewOnlyAccess
+        - ParameterKey: pIsSecurityAudit
+          ParameterValue: !Ref pIsSecurityAudit
+        - ParameterKey: pIsSystemAdministrator
+          ParameterValue: !Ref pIsSystemAdministrator
+        - ParameterKey: pIsSupportUser
+          ParameterValue: !Ref pIsSupportUser
+        - ParameterKey: pIsBillingAccess
+          ParameterValue: !Ref pIsBillingAccess
+      TemplateURL: https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/browser-access-role.yaml
+      Tags:
+        - Key: Name
+          Value: quiverstone-browser-access-role
+        - Key: Purpose
+          Value: browser-role-switching
+        - Key: ManagedBy
+          Value: cloudformation
+
+Outputs:
+  oDeploymentOUs:
+    Description: Organizational Units where roles are deployed
+    Value: !Join [", ", !Ref pDeploymentOUs]
+
+  oDeploymentRegion:
+    Description: Region where roles are deployed
+    Value: !Ref pDeploymentRegion

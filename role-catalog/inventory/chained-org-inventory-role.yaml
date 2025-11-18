@@ -1,21 +1,21 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Chained Account Access Destination Role - Deploys in target accounts to allow read-only access through role chaining
+Description: Quiverstone Chained Organization Inventory Role - Deploys inventory role in Organization account that can be assumed via role chaining from intermediate account
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-chained-account-access-destination
-    Deploy-To: Individual Account Home Region (e.g. us-east-1)
+    Name: quiverstone-chained-org-inventory-role
+    Deploy-To: Management/Delegate Org Account in Home Region(e.g. us-east-1)
     Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/access/quiverstone-chained-account-access-destination.yaml
-    Note: Deploys destination role in target account that can be assumed via role chaining from intermediate account
-    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-chained-account-access-destination.yaml&stackName=quiverstone-chained-account-access-destination
+    Source: github.com/quiverstone/assets/role-catalog/inventory/chained-org-inventory-role.yaml
+    Note: Deploys inventory role in Organization that can be assumed via role chaining from intermediate account
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/chained-org-inventory-role.yaml&stackName=quiverstone-chained-org-inventory-role
     LastUpdated: 20251112
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: Account Access Role Configuration
+          default: Inventory Role Configuration
         Parameters:
-          - pAccountAccessRoleName
+          - pInventoryRoleName
           - pExternalId
       - Label:
           default: Intermediate Account Configuration
@@ -25,8 +25,8 @@ Metadata:
           - pIntermediateRoleName
           - pIntermediateRoleExternalId
     ParameterLabels:
-      pAccountAccessRoleName:
-        default: Account Access Role Name
+      pInventoryRoleName:
+        default: Inventory Role Name
       pExternalId:
         default: External ID (Optional)
       pIntermediateAccountId:
@@ -34,17 +34,17 @@ Metadata:
       pTrustPrincipals:
         default: Trust All Principals in Intermediate Account
       pIntermediateRoleName:
-        default: Intermediate Role Name (Required if Trust Principals = 'Named')
+        default: Intermediate Role Name (Required if Trust Princiapls = 'Named')
       pIntermediateRoleExternalId:
         default: Intermediate Role External ID (Reference Only)
 
 Parameters:
-  pAccountAccessRoleName:
+  pInventoryRoleName:
     Type: String
-    Default: QuiverstoneChainedAccountAccess
-    Description: Name for the destination account access role
+    Default: QuiverstoneChainedOrgInventory
+    Description: Name for the destination organization inventory role
     MinLength: 1
-    ConstraintDescription: Account Access Role Name must not be null
+    ConstraintDescription: Inventory Role Name must not be null
 
   pExternalId:
     Type: String
@@ -57,7 +57,7 @@ Parameters:
     Description: AWS Account ID that serves as the intermediate hop for role chaining
     AllowedPattern: "[0-9]{12}"
     MinLength: 1
-    ConstraintDescription: Intermediate Account Id must not be null
+    ConstraintDescription: Intermedate Account Id must not be null
 
   pTrustPrincipals:
     Type: String
@@ -65,21 +65,21 @@ Parameters:
       Trust all principals in the intermediate account instead of a specific role. |
       Set to 'All' to allow any role in trusted account. |
       Set to 'Named' to trust only the named role provided below (the role must exist first).
-    Default: Named
+    Default: All
     AllowedValues:
       - All
       - Named
 
   pIntermediateRoleName:
     Type: String
-    Default: QuiverstoneChainHopRole
+    Default: QuiverstoneTrustedIntermediate
     Description: >
       Name of the role in the intermediate account that can assume this role (populate for reference even if trusting entire account).
 
   pIntermediateRoleExternalId:
     Type: String
     Default: ""
-    Description: External ID for Intermediate role assumption (reference only for Quiverstone Configuration)
+    Description: External ID for Intermediate role assumption (reference only for Quiverstone Configuation)
     MaxLength: 1224
 
 Conditions:
@@ -91,10 +91,10 @@ Conditions:
   cNoIntermediateRoleProvided: !Equals [!Ref pIntermediateRoleName, ""]
 
 Resources:
-  rQuiverstoneChainedAccountAccessRole:
+  rQuiverstoneChainedOrgInventoryRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref pAccountAccessRoleName
+      RoleName: !Ref pInventoryRoleName
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -118,13 +118,39 @@ Resources:
                 - StringEquals:
                     sts:ExternalId: !Ref pExternalId
                 - !Ref AWS::NoValue
-      ManagedPolicyArns:
-        - !Sub "arn:${AWS::Partition}:iam::aws:policy/ReadOnlyAccess"
       Policies:
-        - PolicyName: QuiverstoneChainedAccountAccessPolicy
+        - PolicyName: QuiverstoneChainedOrgInventoryPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
+              # Organizations read permissions - minimum access
+              - Effect: Allow
+                Action:
+                  - organizations:DescribeOrganization
+                  - organizations:DescribeOrganizationalUnit
+                  - organizations:DescribeAccount
+                  - organizations:DescribePolicy
+                  - organizations:DescribeResourcePolicy
+                  - organizations:DescribeHandshake
+                  - organizations:DescribeCreateAccountStatus
+                  - organizations:DescribeEffectivePolicy
+                  - organizations:ListRoots
+                  - organizations:ListOrganizationalUnitsForParent
+                  - organizations:ListAccountsForParent
+                  - organizations:ListAccounts
+                  - organizations:ListChildren
+                  - organizations:ListParents
+                  - organizations:ListPolicies
+                  - organizations:ListPoliciesForTarget
+                  - organizations:ListTargetsForPolicy
+                  - organizations:ListHandshakesForOrganization
+                  - organizations:ListHandshakesForAccount
+                  - organizations:ListCreateAccountStatus
+                  - organizations:ListAWSServiceAccessForOrganization
+                  - organizations:ListDelegatedAdministrators
+                  - organizations:ListDelegatedServicesForAccount
+                  - organizations:ListTagsForResource
+                Resource: "*"
               # Account information
               - Effect: Allow
                 Action:
@@ -133,49 +159,42 @@ Resources:
                   - account:GetContactInformation
                   - account:ListRegions
                 Resource: "*"
-              # Basic support access
-              - Effect: Allow
-                Action:
-                  - support:DescribeServices
-                  - support:DescribeSeverityLevels
-                  - support:DescribeCommunications
-                  - support:DescribeCases
-                Resource: "*"
 
 Outputs:
-  oTargetRoleArn:
-    Description: ARN of the destination account access role
-    Value: !GetAtt rQuiverstoneChainedAccountAccessRole.Arn
+  TargetRoleArn:
+    Description: Use for 'Target Role ARN' in Quiverstone Organization configuration
+    Value: !GetAtt rQuiverstoneChainedOrgInventoryRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-TargetRoleArn"
 
-  oTargetRoleExternalId:
+  TargetRoleExternalId:
     Condition: cHasExternalId
-    Description: External ID for target role assumption
+    Description: Use for 'Target External ID (recommended)' in Quiverstone Organization configuration
     Value: !Ref pExternalId
     Export:
       Name: !Sub "${AWS::StackName}-TargetRoleExternalId"
 
-  oIntermediateRoleArn:
+  IntermediateRoleArn:
     Condition: cIntermediateRoleProvided
-    Description: ARN of the intermediate role for Quiverstone configuration
+    Description: Use for 'Intermediate Role ARN (required)' in Quiverstone Organization configuration
     Value: !Sub "arn:aws:iam::${pIntermediateAccountId}:role/${pIntermediateRoleName}"
     Export:
       Name: !Sub "${AWS::StackName}-IntermediateRoleArn"
 
-  oIntermediateRoleArnExcluded:
+  IntermediateRoleArnExcluded:
     Condition: cNoIntermediateRoleProvided
-    Description: Notice about missing intermediate role name
+    Description: >
+      NULL Value Provided
     Value: !Sub "IntermediateRoleName not provided, must get Role ARN from Intermediate account ${pIntermediateAccountId}."
 
-  oIntermediateRoleExternalId:
+  IntermediateRoleExternalId:
     Condition: cHasIntermediateRoleExternalId
-    Description: External ID for intermediate role assumption
+    Description: Use for 'Intermediate Role External ID (recommended)' in Quiverstone Organization configuration
     Value: !Ref pIntermediateRoleExternalId
     Export:
       Name: !Sub "${AWS::StackName}-IntermediateRoleExternalId"
 
-  oTrustAllPrincipals:
+  TrustAllPrincipals:
     Condition: cTrustEntireAccount
-    Description: Trust configuration notice
+    Description: End User Notice
     Value: !Sub "You have selected to trust all principals in the intermediate account ${pIntermediateAccountId}. Ensure this is what you want."

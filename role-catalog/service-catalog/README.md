@@ -1,5 +1,7 @@
 # Service Catalog Portfolios
 
+> Note: Not in production or referenced
+
 This directory contains AWS Service Catalog portfolio templates for deploying Quiverstone roles through a centralized, self-service catalog.
 
 For additional information on AWS Service Catalog and deploying these portfolios, please visit:
@@ -36,8 +38,8 @@ AWS Service Catalog portfolio for organization-wide account access role deployme
 
 ## Quick Launch
 
-| Template                           | Description                                      | Deploy To          | Launch                                                                                                                                                                                                                                                                                                                                   |
-| ---------------------------------- | ------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Template                           | Description                                      | Deploy To          | Launch                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------- | ------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Inventory Roles Portfolio**      | MSP portfolio for organization inventory roles   | MSP Account        | [![Launch Stack](../assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/quiverstone-inventory-roles-portfolio.yaml&stackName=quiverstone-inventory-roles-portfolio) |
 | **Account Access Roles Portfolio** | Organization-wide account access roles portfolio | Management Account | [![Launch Stack](../assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/quiverstone-account-access-portfolio.yaml&stackName=quiverstone-account-access-portfolio)   |
 
