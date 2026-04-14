@@ -1,15 +1,19 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Organization Inventory Role - Deploys inventory role in Organization account that can be assumed directly from Quiverstone
+Description: >
+  Quiverstone Organization Inventory Role - Deploys inventory role in Organization account
+  that can be assumed by a dedicated Quiverstone IAM user with required External ID.
 
 Metadata:
   TemplateInfo:
-    Name: quiverstone-dircet-org-inventory-role
+    Name: quiverstone-direct-org-inventory-role
     Deploy-To: Management/Delegated Account Home Region (e.g. us-east-1)
-    Version: 1.0.0
+    Version: 2.0.0
     Source: github.com/quiverstone/assets/role-catalog/inventory/direct-org-inventory-role.yaml
-    Note: Deploys inventory role in Organization that can be assumed directly from Quiverstone
+    Note: >
+      Deploys inventory role in Organization that can be assumed directly by a dedicated
+      Quiverstone IAM user with a required External ID for confused deputy protection.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/direct-org-inventory-role.yaml&stackName=quiverstone-direct-org-inventory-role
-    LastUpdated: 20251112
+    LastUpdated: 20260412
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -18,41 +22,45 @@ Metadata:
           - pRoleName
           - pExternalId
       - Label:
-          default: Trusted Account Configuration
+          default: Quiverstone Trust Configuration
         Parameters:
           - pQuiverstoneProductionAccountId
+          - pQuiverstoneIAMUserName
     ParameterLabels:
       pRoleName:
         default: Target Role Name
       pExternalId:
-        default: External ID (Optional)
+        default: External ID (Required)
       pQuiverstoneProductionAccountId:
-        default: Quiverstone Production Account (684035162433)
+        default: Quiverstone Production Account (DO NOT MODIFY)
+      pQuiverstoneIAMUserName:
+        default: Quiverstone IAM User Name (DO NOT MODIFY)
 
 Parameters:
   pRoleName:
     Type: String
-    Default: QuiverstoneDirectOrgInventory
-    Description: Name for the direct organization inventory role
+    Default: QuiverstoneInventory
+    Description: Name for the direct organization inventory role.
     MinLength: 1
-    ConstraintDescription: Target Role Name must not be null
+    ConstraintDescription: Target Role Name must not be null.
 
   pQuiverstoneProductionAccountId:
     Type: String
-    Default: 684035162433
-    Description: Quiverstone production account ID that can assume this role (DO NOT MODIFY)
+    Default: "684035162433"
+    Description: >
+      Quiverstone production account ID where the dedicated IAM user resides. DO NOT MODIFY.
     AllowedPattern: "[0-9]{12}"
     MinLength: 1
-    ConstraintDescription: Quiverstone production account ID must not be null
+    ConstraintDescription: Must be a valid 12-digit AWS account ID.
 
   pExternalId:
     Type: String
-    Default: ""
-    Description: External ID for additional security (recommended)
+    Description: >
+      Unique External ID provided by Quiverstone during organization onboarding. Required
+      to prevent confused deputy attacks. Retrieve from your Quiverstone organization settings.
+    MinLength: 1
     MaxLength: 1224
-
-Conditions:
-  cHasExternalId: !Not [!Equals [!Ref pExternalId, ""]]
+    ConstraintDescription: External ID is required. Retrieve this value from your Quiverstone organization settings.
 
 Resources:
   rQuiverstoneDirectOrgInventoryRole:
@@ -64,13 +72,12 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
+              # AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:user/${pQuiverstoneIAMUserName}"
               AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
             Action: sts:AssumeRole
-            Condition: !If
-              - cHasExternalId
-              - StringEquals:
-                  sts:ExternalId: !Ref pExternalId
-              - !Ref AWS::NoValue
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref pExternalId
       Policies:
         - PolicyName: QuiverstoneInventoryPolicy
           PolicyDocument:
@@ -114,15 +121,27 @@ Resources:
                 Resource: "*"
 
 Outputs:
-  TargetRoleArn:
-    Description: Use for 'Target Role ARN' in Quiverstone Organization configuration
+  oTargetRoleArn:
+    Description: >
+      ARN of the inventory role. Use for 'Target Role ARN' in your Quiverstone
+      organization configuration.
     Value: !GetAtt rQuiverstoneDirectOrgInventoryRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-TargetRoleArn"
 
-  TargetRoleExternalId:
-    Condition: cHasExternalId
-    Description: Use for 'Target External ID (recommended)' in Quiverstone Organization configuration
+  oExternalId:
+    Description: >
+      External ID configured for this role. Must match the External ID in your
+      Quiverstone organization settings.
     Value: !Ref pExternalId
     Export:
       Name: !Sub "${AWS::StackName}-TargetRoleExternalId"
+
+  oTrustedPrincipal:
+    Description: >
+      The IAM user principal trusted by this role. Only this specific IAM user
+      in the Quiverstone production account can assume this role.
+    # Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:user/${pQuiverstoneIAMUserName}"
+    Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
+    Export:
+      Name: !Sub "${AWS::StackName}-TrustedPrincipal"
