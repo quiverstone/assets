@@ -25,7 +25,6 @@ Metadata:
           default: Quiverstone Trust Configuration
         Parameters:
           - pQuiverstoneProductionAccountId
-          - pQuiverstoneIAMUserName
     ParameterLabels:
       pRoleName:
         default: Target Role Name
@@ -33,8 +32,6 @@ Metadata:
         default: External ID (Required)
       pQuiverstoneProductionAccountId:
         default: Quiverstone Production Account (DO NOT MODIFY)
-      pQuiverstoneIAMUserName:
-        default: Quiverstone IAM User Name (DO NOT MODIFY)
 
 Parameters:
   pRoleName:
