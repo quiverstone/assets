@@ -1,0 +1,263 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Quiverstone Direct to Account Access Role - Provides varying levels of access to AWS Accounts via a dedicated IAM user in the Quiverstone production account with required External ID for confused deputy protection.
+
+Metadata:
+  TemplateInfo:
+    Name: quiverstone-direct-access-role
+    Deploy-To: Any or all Account(s) Home Region (e.g. us-east-1)
+    Version: 2.0.0
+    Source: github.com/quiverstone/assets/role-catalog/access/direct-access-role.yaml
+    Note: >
+      Deploys a role that can be assumed by a dedicated Quiverstone IAM user for direct account access.
+      Requires an External ID to prevent confused deputy attacks. The IAM user principal
+      provides least-privilege trust instead of trusting the entire Quiverstone account.
+    QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role.yaml&stackName=quiverstone-direct-access-role
+    LastUpdated: 20260412
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Role Configuration
+        Parameters:
+          - pRoleName
+          - pExternalId
+      - Label:
+          default: Quiverstone Trust Configuration
+        Parameters:
+          - pQuiverstoneProductionAccountId
+          - pQuiverstoneIAMUserName
+      - Label:
+          default: Permissions
+        Parameters:
+          - pIsReadOnlyAccess
+          - pIsAdministratorAccess
+          - pIsPowerUserAccess
+          - pIsViewOnlyAccess
+          - pIsSecurityAudit
+          - pIsSystemAdministrator
+          - pIsSupportUser
+          - pIsBillingAccess
+    ParameterLabels:
+      pRoleName:
+        default: Role Name
+      pExternalId:
+        default: External ID (Required)
+      pQuiverstoneProductionAccountId:
+        default: Quiverstone Production Account (DO NOT MODIFY)
+      pQuiverstoneIAMUserName:
+        default: Quiverstone IAM User Name (DO NOT MODIFY)
+      pIsReadOnlyAccess:
+        default: Read Only Access
+      pIsAdministratorAccess:
+        default: Administrator Access
+      pIsPowerUserAccess:
+        default: Power User Access
+      pIsViewOnlyAccess:
+        default: View Only Access
+      pIsSecurityAudit:
+        default: Security Audit
+      pIsSystemAdministrator:
+        default: System Administrator
+      pIsSupportUser:
+        default: Support User
+      pIsBillingAccess:
+        default: Billing Access
+
+Parameters:
+  pRoleName:
+    Type: String
+    Default: QuiverstoneDirectAccess
+    Description: Name for the IAM role that Quiverstone will assume for direct account access.
+
+  pQuiverstoneProductionAccountId:
+    Type: String
+    Default: "684035162433"
+    Description: >
+      Quiverstone production account ID. This is the account where the dedicated IAM user
+      resides that will assume this role. DO NOT MODIFY this value.
+    AllowedPattern: "[0-9]{12}"
+    MinLength: 1
+    ConstraintDescription: Must be a valid 12-digit AWS account ID.
+
+  pQuiverstoneIAMUserName:
+    Type: String
+    Default: quiverstone-service
+    Description: >
+      Name of the dedicated IAM user in the Quiverstone production account that will assume
+      this role. This provides least-privilege trust by scoping access to a single IAM user
+      rather than the entire account. DO NOT MODIFY this value.
+    MinLength: 1
+    ConstraintDescription: IAM user name must not be empty.
+
+  pExternalId:
+    Type: String
+    Description: >
+      Unique External ID provided by Quiverstone during organization onboarding. Required
+      to prevent confused deputy attacks where another Quiverstone customer could trick the
+      service into accessing your account. This value is unique per customer and must match
+      the External ID configured in your Quiverstone organization settings.
+    MinLength: 1
+    MaxLength: 1224
+    ConstraintDescription: External ID is required and must not be empty. Retrieve this value from your Quiverstone organization settings.
+
+  pIsReadOnlyAccess:
+    Type: String
+    Description: Grants permissions to view resources and basic metadata across all AWS services.
+    Default: yes
+    AllowedValues:
+      - no
+      - yes
+
+  pIsAdministratorAccess:
+    Type: String
+    Description: Provides full access to AWS services and resources.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsPowerUserAccess:
+    Type: String
+    Description: Provides full access to AWS services and resources, but does not allow management of users and groups.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsViewOnlyAccess:
+    Type: String
+    Description: Grants permissions to view resources and basic metadata across all AWS services.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSecurityAudit:
+    Type: String
+    Description: Grants permissions to view configuration data for many AWS services and to review their logs.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSystemAdministrator:
+    Type: String
+    Description: Grants full access permissions necessary for resources required for application operations.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsSupportUser:
+    Type: String
+    Description: Grants permissions to troubleshoot and resolve issues in an AWS account. This policy also enables the user to contact AWS support to create and manage cases.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+  pIsBillingAccess:
+    Type: String
+    Description: Grants permissions for billing and cost management. This includes viewing account usage and viewing and downloading AWS bills.
+    Default: no
+    AllowedValues:
+      - no
+      - yes
+
+Conditions:
+  cIsReadOnlyAccess: !Equals [yes, !Ref pIsReadOnlyAccess]
+  cIsAdministratorAccess: !Equals [yes, !Ref pIsAdministratorAccess]
+  cIsPowerUserAccess: !Equals [yes, !Ref pIsPowerUserAccess]
+  cIsViewOnlyAccess: !Equals [yes, !Ref pIsViewOnlyAccess]
+  cIsSecurityAudit: !Equals [yes, !Ref pIsSecurityAudit]
+  cIsSystemAdministrator: !Equals [yes, !Ref pIsSystemAdministrator]
+  cIsSupportUser: !Equals [yes, !Ref pIsSupportUser]
+  cIsBillingAccess: !Equals [yes, !Ref pIsBillingAccess]
+
+Resources:
+  rQuiverstoneDirectAccountAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref pRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:user/${pQuiverstoneIAMUserName}"
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref pExternalId
+      ManagedPolicyArns:
+        - !If [
+            cIsAdministratorAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsReadOnlyAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/ReadOnlyAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsPowerUserAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/PowerUserAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsViewOnlyAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/ViewOnlyAccess",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsSecurityAudit,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/SecurityAudit",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsSystemAdministrator,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/SystemAdministrator",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsSupportUser,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/SupportUser",
+            !Ref AWS::NoValue,
+          ]
+        - !If [
+            cIsBillingAccess,
+            !Sub "arn:${AWS::Partition}:iam::aws:policy/job-function/Billing",
+            !Ref AWS::NoValue,
+          ]
+
+Outputs:
+  oRoleArn:
+    Description: >
+      ARN of the Quiverstone Direct Account Access Role. Use this value in your
+      Quiverstone organization configuration under 'Target Role ARN'.
+    Value: !GetAtt rQuiverstoneDirectAccountAccessRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-RoleArn"
+
+  oExternalId:
+    Description: >
+      External ID configured for this role. This must match the External ID in your
+      Quiverstone organization settings for role assumption to succeed.
+    Value: !Ref pExternalId
+    Export:
+      Name: !Sub "${AWS::StackName}-ExternalId"
+
+  oRoleName:
+    Description: Name of the Quiverstone Direct Account Access Role.
+    Value: !Ref rQuiverstoneDirectAccountAccessRole
+    Export:
+      Name: !Sub "${AWS::StackName}-RoleName"
+
+  oTrustedPrincipal:
+    Description: >
+      The IAM user principal trusted by this role. Only this specific IAM user
+      in the Quiverstone production account can assume this role.
+    Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:user/${pQuiverstoneIAMUserName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-TrustedPrincipal"
