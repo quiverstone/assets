@@ -278,4 +278,4 @@ Outputs:
     Description: >
       AWS Console Switch Role does not support External ID. For cross-account access
       with External ID protection, use the Direct Access or Chained Access role templates instead.
-    Value: "Browser role switching does not support External ID - this is an AWS Console limitation."
+    Value: Browser role switching does not support External ID - this is an AWS Console limitation.

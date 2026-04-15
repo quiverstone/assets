@@ -266,6 +266,12 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-TargetRoleArn"
 
+  oTargetRoleName:
+    Description: Name of the destination account access role
+    Value: !Ref rQuiverstoneChainedAccessRole
+    Export:
+      Name: !Sub "${AWS::StackName}-TargetRoleName"
+
   oTargetRoleExternalId:
     Condition: cHasExternalId
     Description: External ID for target role assumption

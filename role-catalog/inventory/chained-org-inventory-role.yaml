@@ -190,7 +190,6 @@ Outputs:
       NULL Value Provided
     Value: !Sub "IntermediateRoleName not provided, must get Role ARN from Intermediate account ${pIntermediateAccountId}."
 
-
   oTrustScope:
     Condition: cTrustEntireAccount
     Description: Trust scope configured for the intermediate account.
