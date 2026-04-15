@@ -1,15 +1,19 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Quiverstone Trusted Intermediate Role - Deploys in the Intermediate Account to enable role chaining
+Description: >
+  Quiverstone Trusted Intermediate Role - Deploys a Role in an Intermediate "Trusted" Account to enable role chaining.
 
 Metadata:
   TemplateInfo:
     Name: quiverstone-trusted-intermediate-role
     Deploy-To: Intermediate/Trusted Account Home Region (e.g. us-east-1)
-    Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/inventory/trusted-intermediate-role.yaml
-    Note: Deploys intermediate role in trusted account that can chain to destination Access Roles in other Accounta
+    Version: 2.0.0
+    Source: github.com/quiverstone/assets/role-catalog/intermediate/trusted-intermediate-role.yaml
+    Note: >
+      Deploys intermediate role in your trusted account that chains to destination roles in desired destination
+      accounts. This role "trusts" the Quiverstone Prodution account and is "trusted" by a role in the end account.
+      An External ID is REQUIRED for confused deputy protection.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/intermediate/trusted-intermediate-role.yaml&stackName=quiverstone-trusted-intermediate-role
-    LastUpdated: 20251112
+    LastUpdated: 20260412
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -17,9 +21,6 @@ Metadata:
         Parameters:
           - pIntermediateRoleName
           - pExternalId
-      - Label:
-          default: Trusted Principal Configuration
-        Parameters:
           - pQuiverstoneProductionAccountId
       - Label:
           default: Destination Role Configuration
@@ -31,45 +32,50 @@ Metadata:
       pIntermediateRoleName:
         default: Intermediate Role Name
       pExternalId:
-        default: External ID (Optional)
+        default: External ID (Required)
       pQuiverstoneProductionAccountId:
-        default: Quiverstone Production Account (684035162433)
+        default: Quiverstone Production Account ID (DO NOT MODIFY)
       pAssumeRoleScope:
         default: Assume Role Scope
       pDestinationAccountId:
-        default: Destination Account ID (Management or DelegatedAccount)
+        default: Destination Account ID (Management or Delegated Account)
       pDestinationRoleName:
         default: Destination Role Name
 
 Parameters:
   pIntermediateRoleName:
     Type: String
-    Default: QuiverstoneTrustedIntermediate
-    Description: Name for the intermediate role that will chain to the destination
+    Default: QuiverstoneIntermediate
+    Description: Name for the intermediate role that will chain to destination roles.
     MinLength: 1
-    ConstraintDescription: Intermediate Role Name must not be null
+    ConstraintDescription: Intermediate Role Name must not be null but can be customized.
 
   pExternalId:
     Type: String
-    Default: ""
-    Description: External ID for this intermediate role assumption (recommended for security)
+    Description: >
+      Unique External ID provided by Quiverstone during organization onboarding. Required
+      to prevent confused deputy attacks. This value is unique per customer and must match
+      the External ID configured in your Quiverstone organization settings.
+    MinLength: 1
     MaxLength: 1224
+    ConstraintDescription: External ID is required. Retrieve this value from your Quiverstone Add Organization settings.
 
   pQuiverstoneProductionAccountId:
     Type: String
-    Default: 684035162433
-    Description: Quiverstone production account ID that can assume this intermediate role (DO NOT MODIFY)
+    Default: "684035162433"
+    Description: >
+      Quiverstone production account ID where the dedicated IAM user resides. DO NOT MODIFY.
     AllowedPattern: "[0-9]{12}"
     MinLength: 1
-    ConstraintDescription: Quiverstone Production Account ID must not be null
+    ConstraintDescription: Must be a valid 12-digit AWS account ID.
 
   pAssumeRoleScope:
     Type: String
     Description: >
       Scope of destination roles this intermediate role can assume:
-      Least Restrictive - 'any-role-any-account' for trusted access to any role in any account. |
-      Most Restrictive - 'specific-account-and-role' for single account destination with specific named role. |
-      Best Option - 'specific-role-any-account' to assume the same role name across multiple accounts/organizations.
+      'any-role-any-account' (least restrictive) - trusted access to any role in any account.
+      'specific-account-and-role' (most restrictive) - single account with specific named role.
+      'specific-role-any-account' (recommended) - assume the same role name across multiple accounts.
     Default: any-role-any-account
     AllowedValues:
       - any-role-any-account
@@ -79,16 +85,19 @@ Parameters:
   pDestinationAccountId:
     Type: String
     Default: ""
-    Description: Management Account ID where the destination role exists (required only for 'specific-account-and-role' scope, ignored otherwise)
+    Description: >
+      Destination account ID where the target role exists. Required only for
+      'specific-account-and-role' scope, ignored otherwise.
     AllowedPattern: "^$|[0-9]{12}"
 
   pDestinationRoleName:
     Type: String
     Default: ""
-    Description: Name of the destination role (required for 'specific-account-and-role' and 'specific-role-any-account' scopes, ignored for 'any-role-any-account')
+    Description: >
+      Name of the destination role. Required for 'specific-account-and-role' and
+      'specific-role-any-account' scopes, ignored for 'any-role-any-account'.
 
 Conditions:
-  cHasExternalId: !Not [!Equals [!Ref pExternalId, ""]]
   cSpecificAccountAndRole:
     !Equals [!Ref pAssumeRoleScope, specific-account-and-role]
   cSpecificRoleAnyAccount:
@@ -105,13 +114,12 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
+              #AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:user/${pQuiverstoneIAMUserName}"
               AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
             Action: sts:AssumeRole
-            Condition: !If
-              - cHasExternalId
-              - StringEquals:
-                  sts:ExternalId: !Ref pExternalId
-              - !Ref AWS::NoValue
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref pExternalId
       Policies:
         - PolicyName: QuiverstoneIntermediateRoleAssume
           PolicyDocument:
@@ -146,15 +154,27 @@ Resources:
                 - !Ref AWS::NoValue
 
 Outputs:
-  IntermediateRoleArn:
-    Description: Use for 'Intermediate Role ARN (required)' in Quiverstone Organization configuration
+  oIntermediateRoleArn:
+    Description: >
+      ARN of the Intermediate Role. Use for 'Intermediate Role ARN' in your
+      Quiverstone organization configuration.
     Value: !GetAtt rQuiverstoneIntermediateRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-IntermediateRoleArn"
 
-  IntermediateRoleExternalId:
-    Condition: cHasExternalId
-    Description: Use for 'Intermediate Role External ID (recommended)' in Quiverstone Organization configuration
+  oExternalId:
+    Description: >
+      External ID configured for the intermediate role. This must match the
+      External ID in your Quiverstone organization settings.
     Value: !Ref pExternalId
     Export:
       Name: !Sub "${AWS::StackName}-IntermediateRoleExternalId"
+
+  oTrustedPrincipal:
+    Description: >
+      The IAM user principal trusted by this intermediate role. Only this specific
+      IAM user in the Quiverstone production account can assume this role.
+    # Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:user/${pQuiverstoneIAMUserName}"
+    Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
+    Export:
+      Name: !Sub "${AWS::StackName}-TrustedPrincipal"
