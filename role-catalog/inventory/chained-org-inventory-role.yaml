@@ -7,19 +7,21 @@ Metadata:
   TemplateInfo:
     Name: quiverstone-chained-org-inventory-role
     Deploy-To: Management/Delegated Org Account in Home Region (e.g. us-east-1)
-    Version: 2.0.0
+    Version: 3.0.0
     Source: github.com/quiverstone/assets/role-catalog/inventory/chained-org-inventory-role.yaml
     Note: >
       Deploys inventory role in Organization that can be assumed via role chaining from the
       intermediate account. An External ID is highly encouraged for confused deputy protection.
+      Supports deployment in either the management account or a delegated admin account.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/chained-org-inventory-role.yaml&stackName=quiverstone-chained-org-inventory-role
-    LastUpdated: 20260412
+    LastUpdated: 20260422
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
           default: Inventory Role Configuration
         Parameters:
           - pInventoryRoleName
+          - pAccountType
           - pExternalId
       - Label:
           default: Intermediate Account Configuration
@@ -30,6 +32,8 @@ Metadata:
     ParameterLabels:
       pInventoryRoleName:
         default: Inventory Role Name
+      pAccountType:
+        default: Account Type
       pExternalId:
         default: External ID (Highly Recommended)
       pIntermediateAccountId:
@@ -47,10 +51,21 @@ Parameters:
     MinLength: 1
     ConstraintDescription: Inventory Role Name must not be null.
 
+  pAccountType:
+    Type: String
+    Default: MANAGEMENT
+    AllowedValues:
+      - MANAGEMENT
+      - DELEGATED_ADMIN
+    Description: >
+      Where is this inventory role being deployed? MANAGEMENT grants full API access including
+      service access, delegated admin enumeration, and Control Tower. DELEGATED_ADMIN omits
+      management-only APIs that would return AccessDenied.
+
   pExternalId:
     Type: String
     Description: >
-      Unique External ID for this role's trust relationship. HIGHTLY RECOMMENDED to prevent confused
+      Unique External ID for this role's trust relationship. HIGHLY RECOMMENDED to prevent confused
       deputy attacks during role chaining. Retrieve from your Quiverstone organization settings.
     MinLength: 0
     MaxLength: 1224
@@ -83,6 +98,7 @@ Parameters:
       Required when Trust Scope is 'Named'. Populate even when using 'All' for documentation purposes.
 
 Conditions:
+  cIsManagementAccount: !Equals [!Ref pAccountType, MANAGEMENT]
   cHasExternalId: !Not [!Equals [!Ref pExternalId, ""]]
   cTrustEntireAccount: !Equals [!Ref pTrustPrincipals, All]
   cIntermediateRoleProvided: !Not [!Equals [!Ref pIntermediateRoleName, ""]]
@@ -116,12 +132,13 @@ Resources:
                     sts:ExternalId: !Ref pExternalId
                 - !Ref AWS::NoValue
       Policies:
-        - PolicyName: QuiverstoneChainedOrgInventoryPolicy
+        - PolicyName: QuiverstoneChainedOrgInventoryBasePolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              # Organizations read permissions - minimum access
-              - Effect: Allow
+              # Organizations read — works from both management and delegated admin
+              - Sid: OrganizationsBaseRead
+                Effect: Allow
                 Action:
                   - organizations:DescribeOrganization
                   - organizations:DescribeOrganizationalUnit
@@ -143,19 +160,49 @@ Resources:
                   - organizations:ListHandshakesForOrganization
                   - organizations:ListHandshakesForAccount
                   - organizations:ListCreateAccountStatus
-                  - organizations:ListAWSServiceAccessForOrganization
-                  - organizations:ListDelegatedAdministrators
-                  - organizations:ListDelegatedServicesForAccount
                   - organizations:ListTagsForResource
                 Resource: "*"
-              # Account information
-              - Effect: Allow
+              # Account contacts — returns info for the calling account only
+              - Sid: AccountContactsRead
+                Effect: Allow
                 Action:
                   - account:GetAccountInformation
                   - account:GetAlternateContact
                   - account:GetContactInformation
                   - account:ListRegions
                 Resource: "*"
+              # IAM Identity Center — returns empty (not error) if instance not in this account
+              - Sid: IdentityCenterRead
+                Effect: Allow
+                Action:
+                  - sso:ListInstances
+                  - sso:DescribeInstance
+                  - sso-admin:ListInstances
+                  - sso-admin:DescribeInstance
+                  - identitystore:DescribeIdentityStore
+                Resource: "*"
+        # Management-only APIs — omitted for delegated admin deployments
+        - !If
+          - cIsManagementAccount
+          - PolicyName: QuiverstoneChainedOrgInventoryManagementPolicy
+            PolicyDocument:
+              Version: 2012-10-17
+              Statement:
+                - Sid: OrganizationsManagementOnly
+                  Effect: Allow
+                  Action:
+                    - organizations:ListAWSServiceAccessForOrganization
+                    - organizations:ListDelegatedAdministrators
+                    - organizations:ListDelegatedServicesForAccount
+                  Resource: "*"
+                - Sid: ControlTowerRead
+                  Effect: Allow
+                  Action:
+                    - controltower:ListLandingZones
+                    - controltower:GetLandingZone
+                    - controltower:ListEnabledBaselines
+                  Resource: "*"
+          - !Ref AWS::NoValue
 
 Outputs:
   oTargetRoleArn:
