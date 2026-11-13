@@ -171,12 +171,14 @@ All products are currently at version 1.0.0. Future versions can be added as new
 
 All product templates are sourced from S3:
 
-- **Bucket:** assets.quiverston.io
+- **Bucket:** assets.quiverstone.io
 - **Region:** us-east-2
-- **Prefix:** quiverstone-roles-catalog/
+- **Prefix:** role-catalog/
 
-**Inventory Templates:** `quiverstone-roles-catalog/inventory/`
-**Access Templates:** `quiverstone-roles-catalog/access/`
+**Inventory Templates:** `role-catalog/inventory/`
+**Access Templates:** `role-catalog/access/`
+
+The `Upload Templates` workflow (`.github/workflows/upload-templates.yaml`) publishes the `role-catalog/` directory to this prefix on every push to `main`.
 
 ## Prerequisites
 

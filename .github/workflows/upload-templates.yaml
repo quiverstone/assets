@@ -9,21 +9,23 @@ on:
 permissions: read-all
 
 env:
-  SESSION_NAME: ${{ github.event.repository.name }}
+  SESSION: github-automation-action
   DURATION: 900
   REGION: us-east-2
-  ROLE: ${{ secrets.DELIVERY_ROLE_ARN }}
-  BUCKET: assets.quiverston.io
+  BUCKET_NAME: assets.quiverstone.io
+  PUBLIC_URL: https://assets.quiverstone.io
+  # Only role-catalog/ is published, at the role-catalog/ prefix, so existing template URLs
+  # (https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/<dir>/<file>) keep their paths.
+  SOURCE_DIR: role-catalog
+  KEY_PREFIX: role-catalog
 
 jobs:
   Upload:
-    name: Upload Templates
-    if: github.ref_name == 'main'
+    name: Upload Templates to S3
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -31,16 +33,19 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-session-name: ${{ env.SESSION_NAME }}
+          role-session-name: ${{ env.SESSION }}
           role-duration-seconds: ${{ env.DURATION }}
           aws-region: ${{ env.REGION }}
-          role-to-assume: ${{ env.ROLE }}
+          role-to-assume: ${{ secrets.PA_DELIVER }}
 
-      - name: Sync Role Templates to S3
+      - name: Sync Templates to S3
         run: |
-          echo "Syncing Access Templates"
-          aws s3 sync access s3://${{ env.BUCKET }}/role-catalog/access --delete
-          echo "Syncing Inventory Templates"
-          aws s3 sync inventory 3://${{ env.BUCKET }}/role-catalog/inventory --delete
-           echo "Syncing Service Catalog Templates"
-          aws s3 sync inventory 3://${{ env.BUCKET }}/role-catalog/service-catalog --delete
+          aws s3 sync "$SOURCE_DIR" "s3://$BUCKET_NAME/$KEY_PREFIX" --delete \
+            --exclude ".git*" --exclude ".github/*" --exclude ".trunk/*" --exclude "*.DS_Store"
+          echo "Published to $PUBLIC_URL/$KEY_PREFIX/"
+
+      # Set the repository variable CLOUDFRONT_DISTRIBUTION_ID to refresh the custom-domain cache
+      - name: Invalidate CloudFront cache
+        if: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/$KEY_PREFIX/*"
