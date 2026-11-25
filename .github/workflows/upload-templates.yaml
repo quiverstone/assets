@@ -42,7 +42,19 @@ jobs:
         run: |
           aws s3 sync "$SOURCE_DIR" "s3://$BUCKET_NAME/$KEY_PREFIX" --delete \
             --exclude ".git*" --exclude ".github/*" --exclude ".trunk/*" --exclude "*.DS_Store"
+          # CloudShell scripts are fetched at run time — serve them as plain text with a short cache.
+          aws s3 cp "$SOURCE_DIR/scripts" "s3://$BUCKET_NAME/$KEY_PREFIX/scripts" --recursive \
+            --exclude "*" --include "*.sh" --content-type "text/plain; charset=utf-8" --cache-control "max-age=300"
           echo "Published to $PUBLIC_URL/$KEY_PREFIX/"
+
+      - name: Verify published CloudShell scripts
+        run: |
+          for f in "$SOURCE_DIR"/scripts/*.sh; do
+            url="https://s3.$REGION.amazonaws.com/$BUCKET_NAME/$KEY_PREFIX/scripts/$(basename "$f")"
+            code="$(curl -s -o /dev/null -w '%{http_code}' "$url")"
+            echo "$code $url"
+            [ "$code" = "200" ] || { echo "::error::$url returned HTTP $code"; exit 1; }
+          done
 
       # Set the repository variable CLOUDFRONT_DISTRIBUTION_ID to refresh the custom-domain cache
       - name: Invalidate CloudFront cache

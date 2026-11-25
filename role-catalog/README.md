@@ -6,27 +6,19 @@ For detailed deployment documentation, visit <https://docs.quiverston.io>
 
 ## Access Methods
 
-Quiverstone supports three methods for accessing customer AWS accounts:
+Quiverstone supports three methods for accessing customer AWS accounts. Every template follows the
+same trust contract:
 
-### 1. Browser-Based Access
+| Method | Role trusts | External ID |
+|---|---|---|
+| **Browser** (access roles only) | An AWS account you sign in to (`pTrustedAccountId`), for console switch-role | Not supported |
+| **Direct** | Quiverstone production account `684035162433` (`:root`) | **Required** — your Quiverstone tenant External ID |
+| **Chained** | Your intermediate account (`All`) or the named intermediate role (`Named`) | Optional hop-2 External ID; the tenant External ID is enforced on the intermediate role |
 
-Users log into the target AWS account through their browser and grant Quiverstone temporary access. No pre-deployed roles required.
-
-### 2. Direct Assume Role
-
-Quiverstone production account (684035162433) directly assumes a role in the target account.
-
-- **Trust Relationship:** Target account role trusts Quiverstone production account
-- **Security:** Supports External ID validation
-- **Use Case:** Simple, direct access scenarios
-
-### 3. Chained Assume Role
-
-Quiverstone assumes a role in an intermediate account, which then assumes the target role.
-
-- **Trust Relationship:** Target account role trusts intermediate account role
-- **Chain Validation:** Ensures the chain originates from Quiverstone production account
-- **Use Case:** Additional security layer or compliance requirements
+The intermediate role (`intermediate/trusted-intermediate-role.yaml`, default name
+`QuiverstoneTrustedIntermediate`) trusts the Quiverstone production account and requires the tenant
+External ID. Inventory roles are always assumed by Quiverstone itself, so they have direct and
+chained variants only.
 
 ## Directory Structure
 
@@ -37,7 +29,8 @@ CloudFormation templates for AWS Organizations management accounts with read-onl
 **Templates:**
 
 - Direct organization inventory role
-- Chained organization inventory roles (destination + intermediate)
+- Chained organization inventory role (destination; uses the intermediate role below)
+- Standalone account inventory role
 - Organization delegation policy (JSON)
 
 **Use Case:** Deploy to management accounts for organization-level monitoring
@@ -51,12 +44,24 @@ CloudFormation templates for individual account access and organization-wide Sta
 **Templates:**
 
 - Direct account access roles (individual + StackSet)
-- Chained account access roles (destination + intermediate + StackSet)
+- Chained account access roles (destination + StackSet; uses the intermediate role below)
 - Browser switch roles (individual + StackSet)
 
 **Use Case:** Deploy read-only access roles across all organization accounts
 
 📖 **[View Access README](access/README.md)**
+
+### [intermediate/](intermediate/)
+
+The trusted intermediate role (hop 1) shared by chained inventory and chained access.
+
+📖 **[View Intermediate README](intermediate/README.md)**
+
+### [scripts/](scripts/)
+
+AWS CloudShell one-command deployment for every role type.
+
+📖 **[View Scripts README](scripts/README.md)**
 
 ### [service-catalog/](service-catalog/)
 
@@ -82,37 +87,47 @@ All Quiverstone roles implement:
 
 ## Quick Launch - Organization Inventory Roles
 
-| Template                          | Description                                               | Deploy To                             | Launch                                                                                                                                                                                                                                                                                                                                            |
-| --------------------------------- | --------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Direct Org Inventory**          | Direct assumption from Quiverstone production account     | Management or Delegated Admin Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/quiverstone-direct-org-inventory.yaml&stackName=quiverstone-direct-org-inventory)                             |
-| **Chained Org Inventory - Dest**  | Destination role for chained access in management account | Management or Delegated Admin Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/quiverstone-chained-org-inventory-destination.yaml&stackName=quiverstone-chained-org-inventory-destination)   |
-| **Chained Org Inventory - Inter** | Intermediate role for chained access                      | Intermediate/Trusted Account          | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/quiverstone-chained-org-inventory-intermediate.yaml&stackName=quiverstone-chained-org-inventory-intermediate) |
+| Template | Description | Deploy To | Launch |
+| --- | --- | --- | --- |
+| **Direct Org Inventory** | Assumed directly by Quiverstone | Management or Delegated Admin Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/direct-org-inventory-role.yaml&stackName=quiverstone-direct-org-inventory-role) |
+| **Chained Org Inventory** | Assumed through your intermediate role | Management or Delegated Admin Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/chained-org-inventory-role.yaml&stackName=quiverstone-chained-org-inventory-role) |
+| **Standalone Account Inventory** | Account outside an AWS Organization | Standalone Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/standalone-account-inventory-role.yaml&stackName=quiverstone-standalone-account-inventory-role) |
+| **Trusted Intermediate** | Hop 1 for chained inventory and access | Intermediate/Trusted Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/intermediate/trusted-intermediate-role.yaml&stackName=quiverstone-trusted-intermediate-role) |
 
 ## Quick Launch - Account Access Roles
 
-| Template                            | Description                                        | Deploy To                    | Launch                                                                                                                                                                                                                                                                                                                                                                 |
-| ----------------------------------- | -------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Direct Account Access**           | Direct read-only access to individual account      | Individual Account           | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-direct-account-access.yaml&stackName=quiverstone-direct-account-access)                                                   |
-| **Direct Account Access StackSet**  | Deploy direct access across all org accounts       | Management Account           | [![Launch StackSet](assets/stackset.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/stackset-quiverstone-direct-account-access.yaml&stackName=stackset-quiverstone-direct-account-access)                           |
-| **Chained Account Access - Dest**   | Destination role for chained account access        | Individual Account           | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-chained-account-access-destination.yaml&stackName=quiverstone-chained-account-access-destination)                         |
-| **Chained Account Access StackSet** | Deploy chained destination across all org accounts | Management Account           | [![Launch StackSet](assets/stackset.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/stackset-quiverstone-chained-account-access-destination.yaml&stackName=stackset-quiverstone-chained-account-access-destination) |
-| **Chained Account Access - Inter**  | Intermediate role for chained account access       | Intermediate/Trusted Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-chained-account-access-intermediate.yaml&stackName=quiverstone-chained-account-access-intermediate)                       |
-| **Browser Switch Role**             | Browser-based console access to individual account | Individual Account           | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/quiverstone-browser-switch-role.yaml&stackName=quiverstone-browser-switch-role)                                                       |
-| **Browser Switch Role StackSet**    | Deploy browser roles across all org accounts       | Management Account           | [![Launch StackSet](assets/stackset.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/stackset-quiverstone-browser-switch-role.yaml&stackName=stackset-quiverstone-browser-switch-role)                               |
+| Template | Description | Deploy To | Launch |
+| --- | --- | --- | --- |
+| **Browser Access** | Console switch-role from your account | Individual Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/browser-access-role.yaml&stackName=quiverstone-browser-access-role) |
+| **Browser Access StackSet** | Browser roles across org accounts | Management Account | [![Launch StackSet](assets/stackset.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/browser-access-role-stackset.yaml&stackName=stackset-quiverstone-browser-access-role) |
+| **Direct Access** | Assumed directly by Quiverstone | Individual Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role.yaml&stackName=quiverstone-direct-access-role) |
+| **Direct Access StackSet** | Direct roles across org accounts | Management Account | [![Launch StackSet](assets/stackset.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role-stackset.yaml&stackName=stackset-quiverstone-direct-access-role) |
+| **Chained Access** | Assumed through your intermediate role | Individual Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/chained-access-role.yaml&stackName=quiverstone-chained-access-role) |
+| **Chained Access StackSet** | Chained roles across org accounts | Management Account | [![Launch StackSet](assets/stackset.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/chained-access-role-stackset.yaml&stackName=stackset-quiverstone-chained-access-role) |
+| **Trusted Intermediate** | Hop 1 for chained access | Intermediate/Trusted Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/intermediate/trusted-intermediate-role.yaml&stackName=quiverstone-trusted-intermediate-role) |
+
+## Deploy from AWS CloudShell
+
+Every individual-account template can also be deployed with one command from AWS CloudShell in the
+target account. The Quiverstone app generates the command; see [scripts/](scripts/) for all flags.
+
+```bash
+curl -fsSL https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/scripts/quiverstone-onboard.sh -o quiverstone-onboard.sh && bash quiverstone-onboard.sh --role-type <org-inventory|standalone-inventory|account-access|intermediate> --variant <browser|direct|chained> ...
+```
 
 ## Quick Launch - Service Catalog Portfolios
 
 | Template                      | Description                                     | Deploy To          | Launch                                                                                                                                                                                                                                                                                                                                |
 | ----------------------------- | ----------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Inventory Roles Portfolio** | MSP portfolio for organization inventory roles  | MSP Account        | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/quiverstone-inventory-roles-portfolio.yaml&stackName=quiverstone-inventory-roles-portfolio) |
-| **Account Access Portfolio**  | Organization portfolio for account access roles | Management Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/quiverstone-account-access-portfolio.yaml&stackName=quiverstone-account-access-portfolio)   |
+| **Inventory Roles Portfolio** | MSP portfolio for organization inventory roles  | MSP Account        | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/inventory-roles-portfolio.yaml&stackName=quiverstone-inventory-roles-portfolio) |
+| **Account Access Portfolio**  | Organization portfolio for account access roles | Management Account | [![Launch Stack](assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/account-access-portfolio.yaml&stackName=quiverstone-account-access-portfolio)   |
 
 ## Quick Start
 
 1. Choose the appropriate role type for your needs
 2. Use the quick launch buttons above to deploy templates directly
 3. Review the directory-specific READMEs for detailed configuration options
-4. Provide the External ID to your Quiverstone administrator
+4. Use the External ID shown in Quiverstone (direct and intermediate roles require it)
 
 ## Support
 

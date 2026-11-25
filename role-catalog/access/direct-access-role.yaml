@@ -1,16 +1,18 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  Quiverstone Direct to Account Access Role - Provides varying levels of access to AWS Accounts for federated role switching from the Quiverstone application
+  Quiverstone Direct to Account Access Role - Provides varying levels of access to AWS Accounts from the Quiverstone production account with required External ID for confused deputy protection.
 
 Metadata:
   TemplateInfo:
     Name: quiverstone-direct-access-role
     Deploy-To: Any or all Account(s) Home Region (e.g. us-east-1)
-    Version: 1.0.0
+    Version: 2.0.0
     Source: github.com/quiverstone/assets/role-catalog/access/direct-access-role.yaml
-    Note: Deploys a role that can be assumed via browser session for account access - Does not require the use of a trusted intermediate account and External ID is recommeneded for role assumption.
+    Note: >
+      Deploys a role that can be assumed directly by the Quiverstone production account for account access.
+      Requires your Quiverstone External ID to prevent confused deputy attacks.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role.yaml&stackName=quiverstone-direct-access-role
-    LastUpdated: 20251112
+    LastUpdated: 20260412
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -19,7 +21,7 @@ Metadata:
           - pRoleName
           - pExternalId
       - Label:
-          default: Trusted Account Configuration
+          default: Quiverstone Trust Configuration
         Parameters:
           - pQuiverstoneProductionAccountId
       - Label:
@@ -37,9 +39,9 @@ Metadata:
       pRoleName:
         default: Role Name
       pExternalId:
-        default: External ID (Optional)
+        default: External ID (Required)
       pQuiverstoneProductionAccountId:
-        default: Quiverstone Production Account (684035162433)
+        default: Quiverstone Production Account (DO NOT MODIFY)
       pIsReadOnlyAccess:
         default: Read Only Access
       pIsAdministratorAccess:
@@ -61,21 +63,28 @@ Parameters:
   pRoleName:
     Type: String
     Default: QuiverstoneDirectAccess
-    Description: Name for the federated access role
+    Description: Name for the IAM role that Quiverstone will assume for direct account access.
 
   pQuiverstoneProductionAccountId:
     Type: String
-    Default: 684035162433
-    Description: Quiverstone production account ID that can assume this role (DO NOT MODIFY)
+    Default: "684035162433"
+    Description: >
+      Quiverstone production account ID trusted to assume this role. DO NOT MODIFY this value.
     AllowedPattern: "[0-9]{12}"
     MinLength: 1
-    ConstraintDescription: Quiverstone production account ID must not be null
+    ConstraintDescription: Must be a valid 12-digit AWS account ID.
+
 
   pExternalId:
     Type: String
-    Default: ""
-    Description: External ID for additional security (recommended)
+    Description: >
+      Unique External ID provided by Quiverstone during organization onboarding. Required
+      to prevent confused deputy attacks where another Quiverstone customer could trick the
+      service into accessing your account. This value is unique per customer and must match
+      the External ID configured in your Quiverstone organization settings.
+    MinLength: 1
     MaxLength: 1224
+    ConstraintDescription: External ID is required and must not be empty. Retrieve this value from your Quiverstone organization settings.
 
   pIsReadOnlyAccess:
     Type: String
@@ -142,7 +151,6 @@ Parameters:
       - yes
 
 Conditions:
-  cHasExternalId: !Not [!Equals [!Ref pExternalId, ""]]
   cIsReadOnlyAccess: !Equals [yes, !Ref pIsReadOnlyAccess]
   cIsAdministratorAccess: !Equals [yes, !Ref pIsAdministratorAccess]
   cIsPowerUserAccess: !Equals [yes, !Ref pIsPowerUserAccess]
@@ -164,11 +172,9 @@ Resources:
             Principal:
               AWS: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
             Action: sts:AssumeRole
-            Condition: !If
-              - cHasExternalId
-              - StringEquals:
-                  sts:ExternalId: !Ref pExternalId
-              - !Ref AWS::NoValue
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref pExternalId
       ManagedPolicyArns:
         - !If [
             cIsAdministratorAccess,
@@ -213,20 +219,31 @@ Resources:
 
 Outputs:
   oRoleArn:
-    Description: ARN of the Quiverstone Direct Account Access Role
+    Description: >
+      ARN of the Quiverstone Direct Account Access Role. Use this value in your
+      Quiverstone organization configuration under 'Target Role ARN'.
     Value: !GetAtt rQuiverstoneDirectAccountAccessRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}-RoleArn"
 
-  oRoleExternalId:
-    Condition: cHasExternalId
-    Description: External ID for role assumption
+  oExternalId:
+    Description: >
+      External ID configured for this role. This must match the External ID in your
+      Quiverstone organization settings for role assumption to succeed.
     Value: !Ref pExternalId
     Export:
       Name: !Sub "${AWS::StackName}-ExternalId"
 
   oRoleName:
-    Description: Name of the Quiverstone Direct Account Access Role
+    Description: Name of the Quiverstone Direct Account Access Role.
     Value: !Ref rQuiverstoneDirectAccountAccessRole
     Export:
       Name: !Sub "${AWS::StackName}-RoleName"
+
+  oTrustedPrincipal:
+    Description: >
+      The Quiverstone production account principal trusted by this role. Quiverstone
+      must also present your External ID to assume it.
+    Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
+    Export:
+      Name: !Sub "${AWS::StackName}-TrustedPrincipal"

@@ -7,11 +7,11 @@ This directory contains AWS Service Catalog portfolio templates for deploying Qu
 For additional information on AWS Service Catalog and deploying these portfolios, please visit:
 
 - **AWS Service Catalog Documentation:** <https://docs.aws.amazon.com/servicecatalog/>
-- **Quiverstone Setup Guide:** <https://docs.quiverston.io/setup/>
+- **Quiverstone Setup Guide:** <https://docs.quiverstone.io/setup/>
 
 ## Templates
 
-### quiverstone-inventory-roles-portfolio.yaml
+### inventory-roles-portfolio.yaml
 
 AWS Service Catalog portfolio for Managed Service Providers (MSP) containing organization inventory role products. This portfolio can be shared with customer organizations to enable self-service deployment of inventory roles.
 
@@ -23,7 +23,7 @@ AWS Service Catalog portfolio for Managed Service Providers (MSP) containing org
 
 **Target Users:** MSPs managing multiple customer organizations
 
-### quiverstone-account-access-portfolio.yaml
+### account-access-portfolio.yaml
 
 AWS Service Catalog portfolio for organization-wide account access role deployment. Contains both individual and StackSet-based products for read-only account access across all organization accounts.
 
@@ -40,8 +40,8 @@ AWS Service Catalog portfolio for organization-wide account access role deployme
 
 | Template                           | Description                                      | Deploy To          | Launch                                                                                                                                                                                                                                                                                                                       |
 | ---------------------------------- | ------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Inventory Roles Portfolio**      | MSP portfolio for organization inventory roles   | MSP Account        | [![Launch Stack](../assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/quiverstone-inventory-roles-portfolio.yaml&stackName=quiverstone-inventory-roles-portfolio) |
-| **Account Access Roles Portfolio** | Organization-wide account access roles portfolio | Management Account | [![Launch Stack](../assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/quiverstone-account-access-portfolio.yaml&stackName=quiverstone-account-access-portfolio)   |
+| **Inventory Roles Portfolio**      | MSP portfolio for organization inventory roles   | MSP Account        | [![Launch Stack](../assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/inventory-roles-portfolio.yaml&stackName=quiverstone-inventory-roles-portfolio) |
+| **Account Access Roles Portfolio** | Organization-wide account access roles portfolio | Management Account | [![Launch Stack](../assets/stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/service-catalog/account-access-portfolio.yaml&stackName=quiverstone-account-access-portfolio)   |
 
 ## What is AWS Service Catalog?
 
@@ -81,7 +81,7 @@ AWS Service Catalog allows organizations to create and manage catalogs of IT ser
   - Configurable assume role scope
 
 **Owner/Distributor:** Quiverstone
-**Support:** <support+iac@quiverston.io>
+**Support:** <support+iac@quiverstone.io>
 
 ### Account Access Roles Portfolio
 
@@ -125,7 +125,7 @@ AWS Service Catalog allows organizations to create and manage catalogs of IT ser
   - Automatic inclusion of new accounts
 
 **Owner/Distributor:** Quiverstone
-**Support:** <support+iac@quiverston.io>
+**Support:** <support+iac@quiverstone.io>
 
 ## Portfolio Sharing
 
@@ -283,8 +283,8 @@ aws servicecatalog delete-portfolio-share \
 
 For questions about Service Catalog portfolio deployment or product configuration:
 
-- **Email:** <support+iac@quiverston.io>
-- **Documentation:** <https://docs.quiverston.io/setup/>
+- **Email:** <support+iac@quiverstone.io>
+- **Documentation:** <https://docs.quiverstone.io/setup/>
 - **AWS Service Catalog Docs:** <https://docs.aws.amazon.com/servicecatalog/>
 
 ## Additional Resources

@@ -1,16 +1,19 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Quiverstone Direct to Account Access Role StackSet - Deploys federated role across all Organization Accounts for federated role switching from the Quiverstone application
+  Quiverstone Direct to Account Access Role StackSet - Deploys a federated role across Organization accounts
+  trusting the Quiverstone production account with required External ID for confused deputy protection.
 
 Metadata:
   TemplateInfo:
     Name: stackset-quiverstone-direct-access-role
     Deploy-To: Management or Delegated CloudFormation StackSet Account Home Region (e.g. us-east-1)
-    Version: 1.0.0
+    Version: 2.0.0
     Source: github.com/quiverstone/assets/role-catalog/access/direct-access-role-stackset.yaml
-    Note: Creates a StackSet that deploys federated roles to all organization accounts
+    Note: >
+      Creates a StackSet that deploys federated roles to organization accounts. Roles trust the
+      Quiverstone production account with a required External ID for confused deputy protection.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/direct-access-role-stackset.yaml&stackName=stackset-quiverstone-direct-access-role
-    LastUpdated: 20251112
+    LastUpdated: 20260412
   cfn_nag:
     rules_to_suppress:
       - id: W28
@@ -28,7 +31,7 @@ Metadata:
           - pRoleName
           - pExternalId
       - Label:
-          default: Trusted Account Configuration
+          default: Quiverstone Trust Configuration
         Parameters:
           - pQuiverstoneProductionAccountId
       - Label:
@@ -50,9 +53,9 @@ Metadata:
       pRoleName:
         default: Role Name
       pExternalId:
-        default: External ID (Optional)
+        default: External ID (Required)
       pQuiverstoneProductionAccountId:
-        default: Quiverstone Production Account (684035162433)
+        default: Quiverstone Production Account (DO NOT MODIFY)
       pIsReadOnlyAccess:
         default: Read Only Access
       pIsAdministratorAccess:
@@ -77,7 +80,7 @@ Parameters:
 
   pDeploymentRegion:
     Type: String
-    Description: AWS Region to deploy the roles
+    Description: AWS Region to deploy the roles.
     Default: us-east-1
     AllowedValues:
       - us-east-1
@@ -93,20 +96,25 @@ Parameters:
   pRoleName:
     Type: String
     Default: QuiverstoneDirectAccess
-    Description: Name for the federated access role
+    Description: Name for the IAM role deployed to each account.
 
   pQuiverstoneProductionAccountId:
     Type: String
-    Default: 684035162433
-    Description: Quiverstone production account ID that can assume this role (DO NOT MODIFY)
+    Default: "684035162433"
+    Description: >
+      Quiverstone production account ID trusted to assume this role. DO NOT MODIFY.
     AllowedPattern: "[0-9]{12}"
     MinLength: 1
 
+
   pExternalId:
     Type: String
-    Default: ""
-    Description: External ID for additional security (recommended)
+    Description: >
+      Unique External ID provided by Quiverstone during organization onboarding. Required
+      to prevent confused deputy attacks. Retrieve from your Quiverstone organization settings.
+    MinLength: 1
     MaxLength: 1224
+    ConstraintDescription: External ID is required. Retrieve this value from your Quiverstone organization settings.
 
   pIsReadOnlyAccess:
     Type: String
@@ -177,7 +185,9 @@ Resources:
     Type: AWS::CloudFormation::StackSet
     Properties:
       StackSetName: quiverstone-direct-access-role
-      Description: Quiverstone Direct to Account Access Role StackSet - Deploys federated role across all Organization Accounts for federated role switching from the Quiverstone application
+      Description: >
+        Quiverstone Direct to Account Access Role StackSet - Deploys federated roles across
+        organization accounts trusting the Quiverstone production account with required External ID.
       PermissionModel: SERVICE_MANAGED
       AutoDeployment:
         Enabled: true
@@ -228,9 +238,13 @@ Resources:
 
 Outputs:
   oDeploymentOUs:
-    Description: Organizational Units where roles are deployed
+    Description: Organizational Units where roles are deployed.
     Value: !Join [", ", !Ref pDeploymentOUs]
 
   oDeploymentRegion:
-    Description: Region where roles are deployed
+    Description: Region where roles are deployed.
     Value: !Ref pDeploymentRegion
+
+  oTrustedPrincipal:
+    Description: The Quiverstone production account principal trusted by all deployed roles.
+    Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"

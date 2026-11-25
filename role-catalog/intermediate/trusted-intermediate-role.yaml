@@ -10,7 +10,7 @@ Metadata:
     Source: github.com/quiverstone/assets/role-catalog/intermediate/trusted-intermediate-role.yaml
     Note: >
       Deploys intermediate role in your trusted account that chains to destination roles in desired destination
-      accounts. This role "trusts" the Quiverstone Prodution account and is "trusted" by a role in the end account.
+      accounts. This role "trusts" the Quiverstone Production account and is "trusted" by a role in the end account.
       An External ID is REQUIRED for confused deputy protection.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/intermediate/trusted-intermediate-role.yaml&stackName=quiverstone-trusted-intermediate-role
     LastUpdated: 20260412
@@ -45,7 +45,7 @@ Metadata:
 Parameters:
   pIntermediateRoleName:
     Type: String
-    Default: QuiverstoneIntermediate
+    Default: QuiverstoneTrustedIntermediate
     Description: Name for the intermediate role that will chain to destination roles.
     MinLength: 1
     ConstraintDescription: Intermediate Role Name must not be null but can be customized.
@@ -64,7 +64,7 @@ Parameters:
     Type: String
     Default: "684035162433"
     Description: >
-      Quiverstone production account ID where the dedicated IAM user resides. DO NOT MODIFY.
+      Quiverstone production account ID trusted to assume this role. DO NOT MODIFY.
     AllowedPattern: "[0-9]{12}"
     MinLength: 1
     ConstraintDescription: Must be a valid 12-digit AWS account ID.
@@ -172,8 +172,8 @@ Outputs:
 
   oTrustedPrincipal:
     Description: >
-      The IAM user principal trusted by this intermediate role. Only this specific
-      IAM user in the Quiverstone production account can assume this role.
+      The Quiverstone production account principal trusted by this intermediate role.
+      Quiverstone must also present your External ID to assume it.
     # Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:user/${pQuiverstoneIAMUserName}"
     Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
     Export:

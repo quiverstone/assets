@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
   Quiverstone Standalone Account Inventory Role - Provides read-only access to a standalone account
-  for inventory purposes via a dedicated Quiverstone IAM user with required External ID.
+  for inventory purposes via the Quiverstone production account with required External ID.
 
 Metadata:
   TemplateInfo:
@@ -10,7 +10,7 @@ Metadata:
     Version: 2.0.0
     Source: github.com/quiverstone/assets/role-catalog/inventory/standalone-account-inventory-role.yaml
     Note: >
-      Deploys a role that can be assumed by a dedicated Quiverstone IAM user for standalone
+      Deploys a role that can be assumed by the Quiverstone production account for standalone
       account inventory access. Requires an External ID for confused deputy protection.
       Use this for accounts that are NOT part of an AWS Organization.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/inventory/standalone-account-inventory-role.yaml&stackName=quiverstone-standalone-account-inventory-role
@@ -46,7 +46,7 @@ Parameters:
     Type: String
     Default: "684035162433"
     Description: >
-      Quiverstone production account ID where the dedicated IAM user resides. DO NOT MODIFY.
+      Quiverstone production account ID trusted to assume this role. DO NOT MODIFY.
     AllowedPattern: "[0-9]{12}"
     MinLength: 1
     ConstraintDescription: Must be a valid 12-digit AWS account ID.
@@ -97,8 +97,8 @@ Outputs:
 
   oTrustedPrincipal:
     Description: >
-      The IAM user principal trusted by this role. Only this specific IAM user
-      in the Quiverstone production account can assume this role.
+      The Quiverstone production account principal trusted by this role. Quiverstone
+      must also present your External ID to assume it.
     Value: !Sub "arn:aws:iam::${pQuiverstoneProductionAccountId}:root"
     Export:
       Name: !Sub "${AWS::StackName}-TrustedPrincipal"

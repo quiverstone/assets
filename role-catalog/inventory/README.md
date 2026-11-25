@@ -18,18 +18,18 @@ This directory contains 3 CloudFormation templates and 1 IAM policy document:
 
 **Deploy To:** Management/Delegated Account Home Region (e.g. us-east-1)
 
-**Version:** 1.0.0
+**Version:** current (see the template's `Metadata.TemplateInfo.Version`)
 
 **Key Features:**
 - Direct assumption from Quiverstone production account (684035162433)
 - Read-only access to AWS Organizations APIs
-- Supports External ID for enhanced security (recommended)
+- Requires your Quiverstone External ID (confused deputy protection)
 - Simplest deployment option for organization inventory
 
 **Key Parameters:**
-- `pRoleName`: Name for the direct organization inventory role (Default: QuiverstoneDirectOrgInventory)
+- `pRoleName`: Name for the direct organization inventory role (Default: QuiverstoneInventory)
 - `pQuiverstoneProductionAccountId`: Quiverstone production account ID (Default: 684035162433)
-- `pExternalId`: External ID for additional security (recommended)
+- `pExternalId`: Your Quiverstone External ID (**required**)
 
 **Permissions Granted:**
 - `organizations:List*`: List all organization resources
@@ -41,7 +41,7 @@ This directory contains 3 CloudFormation templates and 1 IAM policy document:
 
 **Deploy To:** Management/Delegate Org Account in Home Region(e.g. us-east-1)
 
-**Version:** 1.0.0
+**Version:** current (see the template's `Metadata.TemplateInfo.Version`)
 
 **Key Features:**
 - Multi-hop role assumption through intermediate account
@@ -51,7 +51,7 @@ This directory contains 3 CloudFormation templates and 1 IAM policy document:
 
 **Key Parameters:**
 - `pInventoryRoleName`: Name for the destination organization inventory role (Default: QuiverstoneChainedOrgInventory)
-- `pExternalId`: External ID for role assumption (recommended for security)
+- `pExternalId`: Optional hop-2 External ID (highly recommended). Your Quiverstone External ID is always enforced on the intermediate role (hop 1)
 - `pIntermediateAccountId`: AWS Account ID that serves as the intermediate hop for role chaining
 - `pTrustPrincipals`: Trust all principals in the intermediate account (All) or only a named role (Named)
 - `pIntermediateRoleName`: Name of the role in the intermediate account (Default: QuiverstoneTrustedIntermediate)
@@ -67,20 +67,20 @@ This directory contains 3 CloudFormation templates and 1 IAM policy document:
 
 **Description:** Quiverstone Standalone Account Inventory Role - Provides read-only access to a Standalone account for inventory purposes.
 
-**Deploy To:** Management Account Home Region (e.g. us-east-1)
+**Deploy To:** Standalone Account Home Region (e.g. us-east-1)
 
-**Version:** 1.0.0
+**Version:** current (see the template's `Metadata.TemplateInfo.Version`)
 
 **Key Features:**
 - Direct assumption from Quiverstone production account (684035162433)
 - Read-only access for account-level inventory
-- Supports External ID for enhanced security (recommended)
+- Requires your Quiverstone External ID (confused deputy protection)
 - For accounts not part of an AWS Organization
 
 **Key Parameters:**
-- `pRoleName`: Name for the direct organization inventory role (Default: QuiverstoneStandaloneAccountInventory)
+- `pRoleName`: Name for the standalone inventory role (Default: QuiverstoneStandaloneAccountInventory)
 - `pQuiverstoneProductionAccountId`: Quiverstone production account ID (Default: 684035162433)
-- `pExternalId`: External ID for additional security (recommended)
+- `pExternalId`: Your Quiverstone External ID (**required**)
 
 **Permissions Granted:**
 - Read-only access to account metadata and basic resource information

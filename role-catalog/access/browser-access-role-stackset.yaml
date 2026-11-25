@@ -1,15 +1,20 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Quiverstone Browser Role StackSet - Deploys browser-accessible roles across all organization accounts
+Description: >
+  Quiverstone Browser Role StackSet - Deploys browser-accessible roles across organization accounts.
+  AWS Console Switch Role does not support External ID - this is an AWS limitation.
 
 Metadata:
   TemplateInfo:
     Name: stackset-quiverstone-browser-access-role
     Deploy-To: Management or Delegated CloudFormation StackSet Account Home Region (e.g. us-east-1)
-    Version: 1.0.0
-    Source: github.com/quiverstone/assets/role-catalog/access/browser-switch-role-stackset.yaml
-    Note: Creates a StackSet that deploys browser-accessible roles to all organization accounts
+    Version: 2.0.0
+    Source: github.com/quiverstone/assets/role-catalog/access/browser-access-role-stackset.yaml
+    Note: >
+      Creates a StackSet that deploys browser-accessible roles to organization accounts.
+      Browser-based role switching does NOT support External ID per AWS documentation.
+      For cross-account access with External ID protection, use Direct or Chained Access templates.
     QuickStackLink: https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://s3.us-east-2.amazonaws.com/assets.quiverstone.io/role-catalog/access/browser-access-role-stackset.yaml&stackName=stackset-quiverstone-browser-access-role
-    LastUpdated: 20251112
+    LastUpdated: 20260412
   cfn_nag:
     rules_to_suppress:
       - id: W28
@@ -48,7 +53,7 @@ Metadata:
       pRoleName:
         default: Role Name
       pTrustedAccountId:
-        default: Trusted Account ID
+        default: Your Trusted Account ID
       pIsReadOnlyAccess:
         default: Read Only Access
       pIsAdministratorAccess:
@@ -73,7 +78,7 @@ Parameters:
 
   pDeploymentRegion:
     Type: String
-    Description: AWS Region to deploy the roles
+    Description: AWS Region to deploy the roles.
     Default: us-east-1
     AllowedValues:
       - us-east-1
@@ -89,12 +94,13 @@ Parameters:
   pRoleName:
     Type: String
     Default: QuiverstoneBrowserSession
-    Description: Name for the browser-accessible organization inventory role
+    Description: Name for the browser-accessible role deployed to each account.
 
   pTrustedAccountId:
     Type: String
     Description: >
-      AWS Account ID you have access to that can assume this role via the same browser session as Quiverstone (IMPORTANT: DO NOT USE ANY QUIVERSTONE ACCOUNT IDs)
+      AWS Account ID you are currently logged into that can assume this role via the same
+      browser session. IMPORTANT: This must be YOUR account - DO NOT use any Quiverstone account IDs.
     AllowedPattern: "[0-9]{12}"
 
   pIsReadOnlyAccess:
@@ -166,7 +172,9 @@ Resources:
     Type: AWS::CloudFormation::StackSet
     Properties:
       StackSetName: quiverstone-browser-access-role
-      Description: Quiverstone Browser Role - Provides browser-based role switching across all organization accounts
+      Description: >
+        Quiverstone Browser Role - Provides browser-based role switching across organization accounts.
+        Does not support External ID (AWS Console limitation).
       PermissionModel: SERVICE_MANAGED
       AutoDeployment:
         Enabled: true
@@ -215,9 +223,15 @@ Resources:
 
 Outputs:
   oDeploymentOUs:
-    Description: Organizational Units where roles are deployed
+    Description: Organizational Units where roles are deployed.
     Value: !Join [", ", !Ref pDeploymentOUs]
 
   oDeploymentRegion:
-    Description: Region where roles are deployed
+    Description: Region where roles are deployed.
     Value: !Ref pDeploymentRegion
+
+  oSecurityNote:
+    Description: >
+      AWS Console Switch Role does not support External ID. For cross-account access
+      with External ID protection, use the Direct Access or Chained Access StackSet templates.
+    Value: Browser role switching does not support External ID - this is an AWS Console limitation.
