@@ -44,12 +44,12 @@ Parameters:
 
   pTemplateS3BucketName:
     Type: String
-    Default: assets.quiverston.io
+    Default: assets.quiverstone.io
     Description: S3 bucket containing the CloudFormation templates
 
   pTemplateS3KeyPrefix:
     Type: String
-    Default: quiverstone-roles-catalog/inventory/
+    Default: role-catalog/
     Description: S3 key prefix for templates (must end with /)
 
 Resources:
@@ -76,14 +76,14 @@ Resources:
       Description: Direct assumption from Quiverstone production account for organization inventory access. Deploys read-only role in management account.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/organizations/inventory
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/organizations/inventory
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - Direct organization inventory role with read-only permissions
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-direct-org-inventory.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}inventory/direct-org-inventory-role.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -105,14 +105,14 @@ Resources:
       Description: Destination role for chained access in management account. Trusts intermediate account for enhanced security through role chaining.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/organizations/inventory
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/organizations/inventory
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - Chained destination role with flexible trust options and read-only permissions
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-org-inventory-destination.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}inventory/chained-org-inventory-role.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -134,14 +134,14 @@ Resources:
       Description: Intermediate role for chained access in trusted account. Enables role chaining from Quiverstone production account to destination role.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/organizations/inventory
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/organizations/inventory
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - Intermediate role with configurable assume role scope for destination accounts
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-org-inventory-intermediate.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}intermediate/trusted-intermediate-role.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product

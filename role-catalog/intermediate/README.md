@@ -16,7 +16,7 @@ This directory contains 1 CloudFormation template:
 
 **Deploy To:** Intermediate/Trusted Account Home Region (e.g. us-east-1)
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 
 **Key Features:**
 - Acts as intermediate hop for chained role assumption
@@ -27,7 +27,7 @@ This directory contains 1 CloudFormation template:
 
 **Key Parameters:**
 - `pIntermediateRoleName`: Name for the intermediate role (Default: QuiverstoneTrustedIntermediate)
-- `pExternalId`: External ID for this intermediate role assumption (recommended for security)
+- `pExternalId`: Your Quiverstone External ID (**required** — Quiverstone always presents it on hop 1)
 - `pQuiverstoneProductionAccountId`: Quiverstone production account ID (Default: 684035162433)
 - `pAssumeRoleScope`: Scope of destination roles this intermediate role can assume
   - `any-role-any-account`: Least restrictive - can assume any role in any account

@@ -44,12 +44,12 @@ Parameters:
 
   pTemplateS3BucketName:
     Type: String
-    Default: assets.quiverston.io
+    Default: assets.quiverstone.io
     Description: S3 bucket containing the CloudFormation templates
 
   pTemplateS3KeyPrefix:
     Type: String
-    Default: quiverstone-roles-catalog/access/
+    Default: role-catalog/
     Description: S3 key prefix for templates (must end with /)
 
 Resources:
@@ -76,14 +76,14 @@ Resources:
       Description: Direct assumption from Quiverstone production account for read-only account access. Deploys individual role with ReadOnlyAccess policy.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/accounts/access
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - Direct account access role with read-only permissions for individual deployment
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-direct-account-access.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}access/direct-access-role.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -105,14 +105,14 @@ Resources:
       Description: StackSet to deploy direct account access roles across all organization accounts. Enables automatic deployment to new accounts.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/accounts/access
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - StackSet for organization-wide direct account access role deployment
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}stackset-quiverstone-direct-account-access.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}access/direct-access-role-stackset.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -134,14 +134,14 @@ Resources:
       Description: Destination role for chained access in individual account. Trusts intermediate account for enhanced security through role chaining.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/accounts/access
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - Chained destination role with flexible trust options and read-only permissions
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-account-access-destination.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}access/chained-access-role.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -163,14 +163,14 @@ Resources:
       Description: StackSet to deploy chained destination roles across all organization accounts. Enables automatic deployment to new accounts with role chaining.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/accounts/access
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - StackSet for organization-wide chained destination role deployment
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}stackset-quiverstone-chained-account-access-destination.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}access/chained-access-role-stackset.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -192,14 +192,14 @@ Resources:
       Description: Intermediate role for chained access in trusted account. Enables role chaining from Quiverstone production account to destination roles in child accounts.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/accounts/access
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - Intermediate role with configurable assume role scope for destination accounts
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-chained-account-access-intermediate.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}intermediate/trusted-intermediate-role.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -221,14 +221,14 @@ Resources:
       Description: Browser-based role switching for interactive AWS Console access. Provides configurable permissions with browser-friendly role assumption.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/accounts/access
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - Browser-accessible role with customizable AWS managed policy permissions
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}quiverstone-browser-switch-role.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}access/browser-access-role.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
@@ -250,14 +250,14 @@ Resources:
       Description: StackSet to deploy browser-accessible roles across all organization accounts. Enables automatic deployment to new accounts with browser-based access.
       Owner: Quiverstone
       Distributor: Quiverstone
-      SupportEmail: support+iac@quiverston.io
-      SupportUrl: https://docs.quiverston.io/setup/accounts/access
-      SupportDescription: For support with this product, contact support+iac@quiverston.io or visit our documentation
+      SupportEmail: support+iac@quiverstone.io
+      SupportUrl: https://docs.quiverstone.io/setup/accounts/access
+      SupportDescription: For support with this product, contact support+iac@quiverstone.io or visit our documentation
       ProvisioningArtifactParameters:
         - Name: v1.0.0
           Description: Initial release - StackSet for organization-wide browser switch role deployment
           Info:
-            LoadTemplateFromURL: !Sub https://${pTemplateS3BucketName}.s3.us-east-2.amazonaws.com/${pTemplateS3KeyPrefix}stackset-quiverstone-browser-switch-role.yaml
+            LoadTemplateFromURL: !Sub https://s3.us-east-2.amazonaws.com/${pTemplateS3BucketName}/${pTemplateS3KeyPrefix}access/browser-access-role-stackset.yaml
           Type: CLOUD_FORMATION_TEMPLATE
       Tags:
         - Key: Product
